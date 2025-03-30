@@ -1,6 +1,6 @@
 import json
 from subprocess import Popen
-import os
+import os, argparse
 
 def script_energy(script: str, args: list=[]):
     '''
@@ -20,5 +20,15 @@ def script_energy(script: str, args: list=[]):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
 
-    print(script_energy('linear.py'))
+    parser.add_argument('-n', '--n_avg', type=int, default=10, help='number of tests to average over')
+    
+    args = parser.parse_args()
+
+    energies = []
+    for i in range(args.n_avg):
+        energies.append(float(script_energy('linear.py', args=['-e', '3'])))
+        print(f'{i}: {energies[i]:.2f}')
+
+    print(f'average: {sum(energies)/args.n_avg:.2f}J')
