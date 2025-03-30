@@ -46,14 +46,14 @@ def train(model, device, train_loader, optimizer, epoch):
         optimizer.step()
 
 
-def simulate_training(ds, nl, hs, e, bs, print_layers=False):
+def simulate_training(ds, nl, hs, e, bs, verbose=False):
     
     device = "cpu"
     input_size=32
 
     model = Net(input_size, [hs for i in range(nl)], 1)
     
-    if print_layers:
+    if verbose:
         for layer in model.children():
             print(layer)
 
@@ -63,14 +63,17 @@ def simulate_training(ds, nl, hs, e, bs, print_layers=False):
 
     optimizer = optim.Adadelta(model.parameters(), lr=1e-3)
 
-    print("Training")
+    if verbose:
+        print("Training")
+    
     start = time.time()
     for epoch in range(e):
-        print(".", end='', flush=True)
+        if verbose:
+            print(".", end='', flush=True)
         train(model, device, train_dataloader, optimizer, epoch)
 
-    print(f"\nDone!. Took {time.time()-start:.4f}s.")
-
+    if verbose:
+        print(f"\nDone!. Took {time.time()-start:.4f}s.")
 
 
 if __name__ == "__main__":
@@ -84,4 +87,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    simulate_training(args.data_size, args.n_layers, args.hidden_size, args.epochs, args.batch_size, print_layers=args.verbose)
+    simulate_training(args.data_size, args.n_layers, args.hidden_size, args.epochs, args.batch_size, verbose=args.verbose)
