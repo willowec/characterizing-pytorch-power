@@ -34,3 +34,5 @@ Okay, so you were approved for the original proposal. Why are you making this mo
 ## 4/13/2025
 
 Set up scripts for exploring parameter space of Linear and CNN. setting to run on raptorlake and broadwell overnight
+
+oh, need to install pytorch on debian

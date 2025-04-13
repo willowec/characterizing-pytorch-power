@@ -34,8 +34,10 @@ def script_energy(script: str, args_dict: dict={}):
 
     # data is now in tmp.json
     with open('tmp.json', 'r') as f:
-        next(f) # discard the comment header perf adds
-        data = json.load(f)
+        for line in f.readlines():
+            if line.startswith('{'):
+                data = json.loads(line)
+                break
     os.remove('tmp.json')
 
     return float(data['counter-value']), tend - tstart
