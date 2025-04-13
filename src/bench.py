@@ -21,14 +21,14 @@ def args_dict_to_list(args_dict: dict):
 
 def script_energy(script: str, args_dict: dict={}):
     '''
-    runs a python script with perf stat energy-cores and args and returns energy, runtime
+    runs a python script with perf stat energy-pkg and args and returns energy, runtime
     '''
 
     args_list = args_dict_to_list(args_dict)
     
     # bench the energy costs of the test target
     tstart = time.time()
-    p1 = Popen(['perf', 'stat', '--event', 'energy-cores', '-j', '-o', 'tmp.json', 'python3'] + [script] + args_list)
+    p1 = Popen(['perf', 'stat', '--event', 'energy-pkg', '-j', '-o', 'tmp.json', 'python3'] + [script] + args_list)
     err = p1.wait()
     tend = time.time()
 
@@ -44,6 +44,8 @@ def script_energy(script: str, args_dict: dict={}):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     
+    parser.add_argument('-n', '--n_average', type=int, default=5, help="num repetitions per run")
+
     args = parser.parse_args()
 
     start_time = time.time()
@@ -71,14 +73,15 @@ if __name__ == "__main__":
                                        '-ds': data_size, '-hs': hidden_size,
                                        '-bs': batch_size}
 
-                        energy, traintime = script_energy('linear.py', linear_args)
+                        for i in range(args.n_average):
+                            energy, traintime = script_energy('linear.py', linear_args)
 
-                        print(f'linear {time.time()-start_time:.3e}s:\t{data_size=} {epochs=} {batch_size=} {n_layers=} {hidden_size=}: {energy=:.2f}J {traintime=:.2f}s')
+                            print(f'linear {time.time()-start_time:.3e}s:\t{data_size=} {epochs=} {batch_size=} {n_layers=} {hidden_size=}: {energy=:.2f}J {traintime=:.2f}s')
 
-                        cur.execute('INSERT INTO linear VALUES(?, ?, ?, ?, ?, ?, ?)',
-                                    [data_size, epochs, batch_size, n_layers,
-                                    hidden_size, energy, traintime])
-                        con.commit()
+                            cur.execute('INSERT INTO linear VALUES(?, ?, ?, ?, ?, ?, ?)',
+                                        [data_size, epochs, batch_size, n_layers,
+                                        hidden_size, energy, traintime])
+                            con.commit()
 
 
     # create cnn table
@@ -112,12 +115,13 @@ if __name__ == "__main__":
                                                    '-ks': k_size,
                                                    }
                                     
-                                    energy, traintime = script_energy('cnn.py', cnn_args)
+                                    for i in range(args.n_average):
+                                        energy, traintime = script_energy('cnn.py', cnn_args)
 
-                                    print(f'cnn {time.time()-start_time:.3e}s:\t{data_size=} {epochs=} {batch_size=} {n_layers=} {channels=} {k_size=} {stride=} {side_length=}: {energy=:.2f}J {traintime=:.2f}s')
+                                        print(f'cnn {time.time()-start_time:.3e}s:\t{data_size=} {epochs=} {batch_size=} {n_layers=} {channels=} {k_size=} {stride=} {side_length=}: {energy=:.2f}J {traintime=:.2f}s')
 
-                                    cur.execute('INSERT INTO cnn VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                                                [data_size, epochs, batch_size, n_layers,
-                                                channels, k_size, stride, side_length, 
-                                                energy, traintime])
-                                    con.commit()
+                                        cur.execute('INSERT INTO cnn VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                                                    [data_size, epochs, batch_size, n_layers,
+                                                    channels, k_size, stride, side_length, 
+                                                    energy, traintime])
+                                        con.commit()
