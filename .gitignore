@@ -2,7 +2,11 @@
 __pycache__/
 *.py[cod]
 *$py.class
+
+# project specific files
 tmp.json
+results.txt
+
 # C extensions
 *.so
 

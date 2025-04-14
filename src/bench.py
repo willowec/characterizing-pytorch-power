@@ -60,17 +60,17 @@ if __name__ == "__main__":
     cur.execute('CREATE TABLE IF NOT EXISTS linear(data_size INTEGER, epochs INTEGER, batch_size INTEGER, n_layers INTEGER, hidden_size INTEGER, energy REAL, traintime REAL)')
 
     # define iterations for each thingy. start, stop, step
-    L_DATA_SIZE = [128, 1024, 128]
-    L_EPOCHS = [10, 100, 10]
-    L_BATCH_SIZE = [32, 512, 32]
-    L_N_LAYERS = [1, 50, 1]
-    L_HIDDEN_SIZE = [16, 256, 16]
+    L_DATA_SIZE = [128, 256, 1024]
+    L_EPOCHS = [10, 50, 100]
+    L_BATCH_SIZE = [32, 64, 128, 256, 512]
+    L_N_LAYERS = [1, 2, 4, 8, 16, 32, 64]
+    L_HIDDEN_SIZE = [16, 64, 128, 256, 512, 1024]
 
-    for data_size in range(*L_DATA_SIZE):
-        for epochs in range(*L_EPOCHS):
-            for batch_size in range (*L_BATCH_SIZE):
-                for n_layers in range (*L_N_LAYERS):
-                    for hidden_size in range(*L_HIDDEN_SIZE):
+    for data_size in L_DATA_SIZE:
+        for epochs in L_EPOCHS:
+            for batch_size in L_BATCH_SIZE:
+                for n_layers in L_N_LAYERS:
+                    for hidden_size in L_HIDDEN_SIZE:
                         linear_args = {'-e': epochs, '-nl': n_layers, 
                                        '-ds': data_size, '-hs': hidden_size,
                                        '-bs': batch_size}
@@ -90,23 +90,23 @@ if __name__ == "__main__":
     cur.execute('CREATE TABLE IF NOT EXISTS cnn(data_size INTEGER, epochs INTEGER, batch_size INTEGER, n_layers INTEGER, channels INTEGER, k_size INTEGER, stride INTEGER, side_length INTEGER, energy REAL, traintime REAL)')
 
     # define iterations for each thingy. start, stop, step
-    C_DATA_SIZE = [128, 1024, 128]
-    C_EPOCHS = [10, 100, 10]
-    C_BATCH_SIZE = [32, 512, 32]
-    C_N_LAYERS = [1, 50, 1]
-    C_CHANNELS = [16, 128, 16]
-    C_K_SIZE = [3, 9, 1]
-    C_STRIDE = [1, 4, 1]
-    C_SIDE_LENGTH = [16, 128, 16]
+    C_DATA_SIZE = [128, 256, 1024]
+    C_EPOCHS = [10, 50, 100]
+    C_BATCH_SIZE = [32, 64, 128, 256, 512]
+    C_N_LAYERS = [1, 2, 4, 8, 16, 32, 64]
+    C_CHANNELS = [2, 4, 8, 16, 32, 64, 128]
+    C_K_SIZE = [3, 5, 9]
+    C_STRIDE = [1, 2, 3]
+    C_SIDE_LENGTH = [8, 16, 32, 64]
 
-    for data_size in range(*C_DATA_SIZE):
-        for epochs in range(*C_EPOCHS):
-            for batch_size in range (*C_BATCH_SIZE):
-                for n_layers in range (*C_N_LAYERS):
-                    for channels in range(*C_CHANNELS):
-                        for k_size in range (*C_K_SIZE):
-                            for stride in range(*C_STRIDE):
-                                for side_length in range(*C_SIDE_LENGTH):
+    for data_size in C_DATA_SIZE:
+        for epochs in C_EPOCHS:
+            for batch_size in C_BATCH_SIZE:
+                for n_layers in C_N_LAYERS:
+                    for channels in C_CHANNELS:
+                        for k_size in C_K_SIZE:
+                            for stride in C_STRIDE:
+                                for side_length in C_SIDE_LENGTH:
                                     cnn_args = {'-e': epochs, 
                                                    '-nl': n_layers, 
                                                    '-ds': data_size, 
@@ -127,3 +127,6 @@ if __name__ == "__main__":
                                                     channels, k_size, stride, side_length, 
                                                     energy, traintime])
                                         con.commit()
+
+    with open('results.txt', 'w') as f:
+        f.write(f"Finished in {time.time()-start_time}s.\n")
