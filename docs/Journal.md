@@ -36,3 +36,5 @@ Okay, so you were approved for the original proposal. Why are you making this mo
 Set up scripts for exploring parameter space of Linear and CNN. setting to run on raptorlake and broadwell overnight
 
 oh, need to install pytorch on debian
+
+Okay, started runs on both broadwell-ep and raptorlake. Notably, broadwell-ep seems to be only about 20% as fast as raptorlake here, so we may need to wait longer for its results. I can move forward with some basic knowledge from just the raptorlake results tho. Hopefully they will be done soon, I don't think I need to touch raptorlake for a while at least. Starting the runs at 5:50pm on Sunday night.
