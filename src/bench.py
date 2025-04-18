@@ -60,11 +60,11 @@ if __name__ == "__main__":
     cur.execute('CREATE TABLE IF NOT EXISTS linear(data_size INTEGER, epochs INTEGER, batch_size INTEGER, n_layers INTEGER, hidden_size INTEGER, energy REAL, traintime REAL)')
 
     # define iterations for each thingy. start, stop, step
-    L_DATA_SIZE = [128, 256, 1024]
-    L_EPOCHS = [10, 50, 100]
-    L_BATCH_SIZE = [32, 64, 128, 256, 512]
-    L_N_LAYERS = [1, 2, 4, 8, 16, 32, 64]
-    L_HIDDEN_SIZE = [16, 64, 128, 256, 512, 1024]
+    L_DATA_SIZE = [64, 256]
+    L_EPOCHS = [1, 5, 10]
+    L_BATCH_SIZE = [32, 128, 512]
+    L_N_LAYERS = [2, 8, 16]
+    L_HIDDEN_SIZE = [8, 32, 256]
 
     for data_size in L_DATA_SIZE:
         for epochs in L_EPOCHS:
@@ -90,14 +90,14 @@ if __name__ == "__main__":
     cur.execute('CREATE TABLE IF NOT EXISTS cnn(data_size INTEGER, epochs INTEGER, batch_size INTEGER, n_layers INTEGER, channels INTEGER, k_size INTEGER, stride INTEGER, side_length INTEGER, energy REAL, traintime REAL)')
 
     # define iterations for each thingy. start, stop, step
-    C_DATA_SIZE = [128, 256, 1024]
-    C_EPOCHS = [10, 50, 100]
-    C_BATCH_SIZE = [32, 64, 128, 256, 512]
-    C_N_LAYERS = [1, 2, 4, 8, 16, 32, 64]
-    C_CHANNELS = [2, 4, 8, 16, 32, 64, 128]
-    C_K_SIZE = [3, 5, 9]
-    C_STRIDE = [1, 2, 3]
-    C_SIDE_LENGTH = [8, 16, 32, 64]
+    C_DATA_SIZE = [64, 256]
+    C_EPOCHS = [1, 5, 10]
+    C_BATCH_SIZE = [32, 128, 512]
+    C_N_LAYERS = [2, 4, 32]
+    C_CHANNELS = [32]
+    C_K_SIZE = [5, 9]
+    C_STRIDE = [1, 2, 4]
+    C_SIDE_LENGTH = [8, 16, 32]
 
     for data_size in C_DATA_SIZE:
         for epochs in C_EPOCHS:
