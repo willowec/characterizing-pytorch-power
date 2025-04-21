@@ -9,30 +9,20 @@ import argparse
 import time
 
 class Net(nn.Module):
-    def __init__(self, layers, channels, k_size, stride):
+    def __init__(self, in_channels, out_channels, k_size, stride):
         super(Net,self).__init__()
         
-        self.layers = nn.ModuleList([nn.Conv2d(channels, channels, k_size, stride=stride, padding='same')])
-        if layers > 1:
-            for i in range(1, layers-1):
-                self.layers.append(nn.Conv2d(channels, channels, k_size, stride=stride, padding='same'))
-
-        self.layers.append(nn.Conv2d(channels, channels, k_size, stride=stride, padding='same'))
-
+        self.layers = nn.ModuleList([nn.Conv2d(in_channels, out_channels, k_size, stride=stride)])
 
     def forward(self,x):
     
-        out = self.layers[0](x)
-        if len(self.layers) > 0:
-            for layer in self.layers[1:-1]:
-                out = layer(out)
-
-        out = self.layers[-1](out)
+        for layer in self.layers:
+            x = layer(x)
 
         # get to size 1 for label
-        out = torch.mean(out, (1, 2, 3))
+        x = torch.mean(x, (1, 2, 3))
 
-        return out
+        return x
 
 
 def train(model, device, train_loader, optimizer, epoch):
@@ -40,24 +30,24 @@ def train(model, device, train_loader, optimizer, epoch):
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), torch.squeeze(target.to(device))
         optimizer.zero_grad()
-        output = torch.squeeze(model(data))
+        output = model(data)
 
         loss = F.mse_loss(output, target)
         loss.backward()
         optimizer.step()
 
 
-def simulate_training(epochs, ds, x_size, y_size, n_layers, channels, k_size, stride, bs, verbose=False):
+def simulate_training(epochs, ds, x_size, y_size, in_channels, out_channels, k_size, stride, bs, verbose=False):
     
     device = "cpu"
 
-    model = Net(channels, channels, k_size, stride)
+    model = Net(in_channels, out_channels, k_size, stride)
     
     if verbose:
         for layer in model.children():
             print(layer)
 
-    imsize = (channels, x_size, y_size)
+    imsize = (in_channels, x_size, y_size)
     training_X = torch.rand((ds, *imsize))
     training_y = torch.rand((ds, 1))
     train_dataloader = DataLoader(TensorDataset(training_X, training_y), batch_size=bs, shuffle=True)
@@ -76,14 +66,17 @@ def simulate_training(epochs, ds, x_size, y_size, n_layers, channels, k_size, st
     if verbose:
         print(f"\nDone!. Took {time.time()-start:.4f}s.")
 
+    return sum(p.numel() for p in model.parameters())
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-ds", "--data_size", type=int, default=100, help="size of the randomzied dataset")
-    parser.add_argument("-nl", "--n_layers", type=int, default=4, help="number of hidden layers")
     parser.add_argument("-bs", "--batch_size", type=int, default=64, help="batch_size")
     parser.add_argument("-e", "--epochs", type=int, default=5, help="number of epochs")
-    parser.add_argument("-cs", "--channels", type=int, default=3, help="number of channels")
+    parser.add_argument("-ics", "--in_channels", type=int, default=3, help="number of channels in")
+    parser.add_argument("-ocs", "--out_channels", type=int, default=3, help="number of channels out")
     parser.add_argument("-ks", "--k_size", type=int, default=3, help="kernel size")
     parser.add_argument("-st", "--stride", type=int, default=1, help="stride")
     parser.add_argument("-sl", "--side_length", type=int, default=32, help="image side length")
@@ -91,7 +84,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    simulate_training(args.epochs, args.data_size, 
-                      args.side_length, args.side_length, args.n_layers, 
-                      args.channels, args.k_size, args.stride, 
+    params = simulate_training(args.epochs, args.data_size, 
+                      args.side_length, args.side_length, args.in_channels, 
+                      args.out_channels, args.k_size, args.stride, 
                       args.batch_size, verbose=args.verbose)
+    print(params)

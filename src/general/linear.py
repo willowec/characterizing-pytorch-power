@@ -9,29 +9,17 @@ import argparse
 import time
 
 class Net(nn.Module):
-    def __init__(self, input_size: int, hidden_sizes: list, num_classes: int):
+    def __init__(self, input_size: int, output_size: int):
         super(Net,self).__init__()
         
-        self.layers = nn.ModuleList([nn.Linear(input_size, hidden_sizes[0])])
-        self.layers.append(nn.ReLU())
-        if len(hidden_sizes) > 1:
-            for i in range(1, len(hidden_sizes)-1):
-                self.layers.append(nn.Linear(hidden_sizes[i-1], hidden_sizes[i]))
-                self.layers.append(nn.ReLU())
-
-        self.layers.append(nn.Linear(hidden_sizes[-1], num_classes))
-
+        self.layers = nn.ModuleList([nn.Linear(input_size, output_size)])
 
     def forward(self,x):
     
-        out = self.layers[0](x)
-        if len(self.layers) > 0:
-            for layer in self.layers[1:-1]:
-                out = layer(out)
+        for layer in self.layers:
+            x = layer(x)
 
-        out = self.layers[-1](out)
-
-        return out
+        return x
 
 
 def train(model, device, train_loader, optimizer, epoch):
@@ -46,18 +34,18 @@ def train(model, device, train_loader, optimizer, epoch):
         optimizer.step()
 
 
-def simulate_training(ds, nl, hs, e, bs, verbose=False):
+def simulate_training(ds, input_size, output_size, e, bs, verbose=False):
     
     device = "cpu"
 
-    model = Net(hs, [hs for i in range(nl)], 1)
+    model = Net(input_size, output_size)
     
     if verbose:
         for layer in model.children():
             print(layer)
 
-    training_X = torch.rand((ds, hs))
-    training_y = torch.rand((ds, 1))
+    training_X = torch.rand((ds, input_size))
+    training_y = torch.rand((ds, output_size))
     train_dataloader = DataLoader(TensorDataset(training_X, training_y), batch_size=bs, shuffle=True)
 
     optimizer = optim.Adadelta(model.parameters(), lr=1e-3)
@@ -74,16 +62,19 @@ def simulate_training(ds, nl, hs, e, bs, verbose=False):
     if verbose:
         print(f"\nDone!. Took {time.time()-start:.4f}s.")
 
+    return sum(p.numel() for p in model.parameters())
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-ds", "--data_size", type=int, default=100, help="size of the randomzied dataset")
-    parser.add_argument("-hs", "--hidden_size", type=int, default=128, help="size of the hidden layer")
-    parser.add_argument("-nl", "--n_layers", type=int, default=4, help="number of hidden layers")
+    parser.add_argument("-is", "--input_size", type=int, default=128, help="input size of the linear layer")
+    parser.add_argument("-os", "--output_size", type=int, default=128, help="output size of the linear layer")
     parser.add_argument("-bs", "--batch_size", type=int, default=64, help="batch_size")
     parser.add_argument("-e", "--epochs", type=int, default=5, help="number of epochs")
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose")
 
     args = parser.parse_args()
 
-    simulate_training(args.data_size, args.n_layers, args.hidden_size, args.epochs, args.batch_size, verbose=args.verbose)
+    params = simulate_training(args.data_size, args.input_size, args.output_size, args.epochs, args.batch_size, verbose=args.verbose)
+    print(params) # print params to pass back to trainer
