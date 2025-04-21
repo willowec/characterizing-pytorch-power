@@ -68,3 +68,20 @@ From here, direction should be:
 - therefore we can also recommend parameters to minimize energy cost?
   - test on larger nets
     - how do we set up this test?
+
+## 4/21/2025
+
+- My project is more of a solution than a measurement study
+  - can still make report even if it doesnt work
+  - see slides for more, cover what worked what didnt analyze why
+- Report structure is up on BrightSpace
+  - Need related works 
+- Demo
+  - video of about five minutes
+  - highlight impressive features
+  - explain problem and solution
+  - dont need to have slides, can just explain and walk through
+
+Initial expected caveats / reasons for failure:
+- dont consider skip connections
+- dont consider max pool, batch norm, etc
