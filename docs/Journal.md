@@ -50,3 +50,21 @@ For linear, heres some results:
 - n_layers is also largely linear, also obvious, good to verify.
 - hidden_size is a little more complicated it seems, not always linear.
 - data_size as well.
+
+From here, direction should be:
+- select "default values" for linear, cnn
+- vary each parameter individually over these defaults
+  - might be better to store in JSON over db in this case, honestly
+    - fixed: {}
+	  - varied: []
+  - plot each and see if it scales linearly, or in a more interesting way
+  - does energy cost ever not correlate perfectly with training time?
+- now, ignore linearly scaling parameters for training data as they can be modeled trivially
+- for nonlinear parameters, try:
+  - curve fitting
+  - dense NN
+    - does NN work for numbers it hasn't seen before (for example, batch size 31 if training data only has 32)
+- finally, we can predict energy cost for each layer in net
+- therefore we can also recommend parameters to minimize energy cost?
+  - test on larger nets
+    - how do we set up this test?
