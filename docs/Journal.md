@@ -38,3 +38,15 @@ Set up scripts for exploring parameter space of Linear and CNN. setting to run o
 oh, need to install pytorch on debian
 
 Okay, started runs on both broadwell-ep and raptorlake. Notably, broadwell-ep seems to be only about 20% as fast as raptorlake here, so we may need to wait longer for its results. I can move forward with some basic knowledge from just the raptorlake results tho. Hopefully they will be done soon, I don't think I need to touch raptorlake for a while at least. Starting the runs at 5:50pm on Sunday night.
+
+## 4/20/2025
+
+Started exploring the data using `explore_db.py`. 
+I now realize the way I have been going about this is totally stupid and wasteful. I should fix all params to "default values" and vary one for a bunch of different possibilities instead of doing this idiotic search
+
+For linear, heres some results:
+- I noticed that batch_size sees improvements up to 512 and I need to go further.
+- epochs scale linearly, obviously, no need to test that.
+- n_layers is also largely linear, also obvious, good to verify.
+- hidden_size is a little more complicated it seems, not always linear.
+- data_size as well.
