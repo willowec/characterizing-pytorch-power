@@ -104,6 +104,8 @@ def explore_param(model_script: Path, params: dict, target: str):
 
 
 if __name__ == '__main__':
+    OUT_DIR.joinpath(os.uname().nodename).mkdir(parents=True, exist_ok=True)
+
     for script, params in zip(MODEL_SCRIPTS, MODEL_PARAMS):
         for param in params.keys():
 
@@ -112,7 +114,7 @@ if __name__ == '__main__':
             param_vals, energies, train_times, model_n_params = explore_param(
                 script, params, param)
     
-            with open(OUT_DIR.joinpath(f'{script.stem}-{param.replace("-", "")}.json'), 'w+') as f:
+            with open(OUT_DIR.joinpath(os.uname().nodename).joinpath(f'{script.stem}-{param.replace("-", "")}.json'), 'w+') as f:
                 data = {'fixed': {}}
                 for k, v in params.items():
                     data['fixed'][k] = v
