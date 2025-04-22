@@ -85,3 +85,23 @@ From here, direction should be:
 Initial expected caveats / reasons for failure:
 - dont consider skip connections
 - dont consider max pool, batch norm, etc
+
+## 4/22/2025
+
+Lets look at some initial results
+
+1. Epochs scale linearly but the variance gets worse with the more epochs
+2. We see some staircasing for the channel count in CNN: 
+![](./img/4_22_in_channels_cnn.png) 
+3. We also see it for the data size in CNN: 
+![](./img/4_22_data_size_cnn.png)
+4. But *not* for the data size in Linear, or is it just too noisy? 
+![](./img/4_22_data_size_linear.png)
+5. Batch size surprisingly doesnt incur extra cost for the entire range we swept for Linear:
+![](./img/4_22_batch_size_linear.png)
+6. And shockingly enough it gets way worse for CNN? And is way more noisy: 
+![](./img/4_22_batch_size_cnn.png)
+
+
+Next up I REALLY need to do some literature review.
+I have no idea where to go from here

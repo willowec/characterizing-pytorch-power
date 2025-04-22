@@ -16,7 +16,7 @@ if __name__ == "__main__":
 	param = args.file.name.split('.')[0].split('-')[1]
 	data = json.loads(args.file.read_text())
 	
-	f, ax = plt.subplots(2)
+	f, ax = plt.subplots(1, 2, figsize=(12, 5))
 	# plot energy
 	ax[0].scatter(data['param_vals'], data['energies'], color='orange')
 	ax[0].set_xlabel(param)
