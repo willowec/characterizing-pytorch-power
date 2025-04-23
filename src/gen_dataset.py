@@ -15,6 +15,11 @@ import warnings
 warnings.filterwarnings("ignore", category=Warning)
 import pyRAPL
 
+import argparse
+
+# data size is batch_size * BATCH_MULTIPLIER
+BATCH_MULTIPLIER=5
+DEVICE = 'cpu'
 
 class ConvLayer(nn.Module):
     def __init__(self, in_chan, out_chan, k_size, stride):
@@ -50,15 +55,13 @@ def train_one_epoch(model, train_loader, optimizer):
     '''
     simulates training a the model and returns per-batch forward energy/time and backward energy/time
     '''
-
-
     forward_energy = []
     forward_time = []
     backward_energy = []
     backward_time = []
 
     for batch_idx, (data, label) in enumerate(train_loader):
-        data, label = data.to(device), label.to(device)
+        data, label = data.to(DEVICE), label.to(DEVICE)
         optimizer.zero_grad()
 
         # stat energy of forward pass
@@ -86,18 +89,11 @@ def train_one_epoch(model, train_loader, optimizer):
     return np.mean(forward_energy), np.mean(forward_time), np.mean(backward_energy), np.mean(backward_time)
 
 
-if __name__ == "__main__":
-
-    pyRAPL.setup()
-
-    device = 'cpu'
-
-    net = ConvLayer(10, 10, 3, 2)
-
-    in_size = (10, 32, 32)
-    out_size = (10, 15, 15) # out chan, in_size/stride - (k_size-1)/2
-    data_size = 1024
-    batch_size = 512
+def gather_epoch(net, batch_size, in_size, out_size):
+    '''
+    generates random data for a net, returns forward/backward energy/time
+    '''
+    data_size = batch_size*BATCH_MULTIPLIER
 
     train_loader = DataLoader(
             TensorDataset(torch.rand(data_size, *in_size), 
@@ -106,5 +102,37 @@ if __name__ == "__main__":
     )    
     optimizer = torch.optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-    print(train_one_epoch(net, train_loader, optimizer))
+    return train_one_epoch(net, train_loader, optimizer)
+
+
+def gather_conv(batch_size, in_chan, out_chan, side_len, k_size, stride):
+    in_size = (in_chan, side_len, side_len)
+    out_size = (out_chan, int(side_len/stride - (k_size-1)/2), int(side_len/stride - (k_size-1)/2))
+
+    net = ConvLayer(in_chan, out_chan, k_size, stride)
+    return gather_epoch(net, batch_size, in_size, out_size)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-nc', '--n_conv', default=10, help='number of data points to generate for conv layer')
+    parser.add_argument('-np', '--n_pool', default=10, help='number of data points to generate for pooling layer')
+    parser.add_argument('-nl', '--n_linear', default=10, help='number of data points to generate for linear layer')
+    parser.add_argument('-na', '--n_avg', default=10, help='number of iteratios to average over per data point')
+
+    args = parser.parse_args()
+
+    pyRAPL.setup()
+
+    conv_min = torch.Tensor([32, 1, 1, 8, 3, 1])
+    conv_max = torch.Tensor([2048, 256, 256, 128, 15, 8])
+
+    for i in range(args.n_conv):
+        
+        conv_args = (torch.rand(6) * (conv_max - conv_min) + conv_min).type(torch.int32)
+        print(*conv_args.tolist())
+
+        for j in range(args.n_avg):
+            print(gather_conv(*conv_args.tolist()))
+
 
