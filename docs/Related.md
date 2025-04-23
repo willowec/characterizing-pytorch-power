@@ -8,6 +8,7 @@
 - [Estimating energy consumption of neural networks with joint Structure–Device encoding](https://www.sciencedirect.com/science/article/pii/S2210537924001070)
 - [Energy Consumption of Neural Networks on NVIDIA Edge Boards: an Empirical Model](https://arxiv.org/pdf/2210.01625)
 - [Profiling Energy Consumption of Deep Neural Networks on NVIDIA Jetson Nano](https://ieeexplore.ieee.org/document/9290876)
+
 ## Have Read
 
 ### [Estimation of energy consumption in machine learning](https://www.sciencedirect.com/science/article/pii/S0743731518308773)

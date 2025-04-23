@@ -1,0 +1,2 @@
+This directory contains scripts from when I first started this project and, without thinking, decided to try and comprehensively explore the entire problem space.
+It didn't get me very far and I wasted a lot of CPU time.

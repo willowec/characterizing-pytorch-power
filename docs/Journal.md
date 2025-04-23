@@ -105,3 +105,18 @@ Lets look at some initial results
 
 Next up I REALLY need to do some literature review.
 I have no idea where to go from here
+
+## 4/23/2025
+
+Now that I have read [NeuralPower](https://arxiv.org/abs/1710.05420) I feel like I have a way forward. 
+Lets set up measurement scripts for Conv2D, MaxPool, and Fully Connected.
+Then we can go ahead and measure the forward pass for each.
+And if we have time do the backward pass as well?
+
+But the process is:
+1. define parameter boundaries for each layer type
+2. define a number of data points to collect for each layer type
+3. for each layer type:
+4. collect energy and time for both forward and backward pass on layer with randomly initialized parameters
+5. repeat 3, 4 until dataset complete
+6. multivariate polynomial regression to create model

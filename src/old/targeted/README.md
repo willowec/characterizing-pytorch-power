@@ -1,0 +1,1 @@
+This directory contains scripts for exploring the affect of varying only one parameter on the layer types
