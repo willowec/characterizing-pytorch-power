@@ -9,13 +9,11 @@ import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader
 
 import numpy as np
+import argparse
+import csv
 
-# suppress pyRAPL warnings?
-import warnings
-warnings.filterwarnings("ignore", category=Warning)
 import pyRAPL
 
-import argparse
 
 # data size is batch_size * BATCH_MULTIPLIER
 BATCH_MULTIPLIER=5
@@ -107,7 +105,10 @@ def gather_epoch(net, batch_size, in_size, out_size):
 
 def gather_conv(batch_size, in_chan, out_chan, side_len, k_size, stride):
     in_size = (in_chan, side_len, side_len)
-    out_size = (out_chan, int(side_len/stride - (k_size-1)/2), int(side_len/stride - (k_size-1)/2))
+    out_size = (out_chan, # calculated based on eqns at https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
+                int(((side_len - (k_size-1) - 1) / stride) + 1),
+                int(((side_len - (k_size-1) - 1) / stride) + 1)
+                )
 
     net = ConvLayer(in_chan, out_chan, k_size, stride)
     return gather_epoch(net, batch_size, in_size, out_size)
@@ -125,14 +126,28 @@ if __name__ == "__main__":
     pyRAPL.setup()
 
     conv_min = torch.Tensor([32, 1, 1, 8, 3, 1])
-    conv_max = torch.Tensor([2048, 256, 256, 128, 15, 8])
+    conv_max = torch.Tensor([2048, 16, 16, 64, 9, 4])
 
-    for i in range(args.n_conv):
-        
-        conv_args = (torch.rand(6) * (conv_max - conv_min) + conv_min).type(torch.int32)
-        print(*conv_args.tolist())
+    with open(f'out/conv.csv', 'w+') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',')
+        writer.writerow(['batch_size', 'in_chan', 'out_chan', 'side_len', 'k_size', 'stride', 'for_energy', 'for_time', 'back_energy', 'back_time'])
 
-        for j in range(args.n_avg):
-            print(gather_conv(*conv_args.tolist()))
+        for i in range(args.n_conv):
+            
+            # generate the conv args
+            conv_args = None
+            while conv_args is None:
+                conv_args = ((torch.rand(6) * (conv_max - conv_min)) + conv_min).type(torch.int32)
+
+                if conv_args[4] > conv_args[3]:
+                    conv_args = None # regen if k size > im size
+
+            print(f'conv args {conv_args.tolist()}:\t', end='', flush=True)    
+
+            res = [[gather_conv(*conv_args.tolist())] for j in range(args.n_avg)]
+            means = np.mean(res, axis=0).tolist()[0]
+
+            print(f'{means[0]/1_000_000:.4f}J, {means[1]/1_000_000:.4f}s, {means[2]/1_000_000:.4f}J, {means[3]/1_000_000:.4f}s')
+            writer.writerow(conv_args.tolist() + means) 
 
 
