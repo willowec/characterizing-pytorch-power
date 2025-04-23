@@ -120,3 +120,9 @@ But the process is:
 4. collect energy and time for both forward and backward pass on layer with randomly initialized parameters
 5. repeat 3, 4 until dataset complete
 6. multivariate polynomial regression to create model
+-----------------
+WEVE DONE IT (mostly) (a little)
+
+Managed to get 3,4,5 working for conv and linear. 
+need to do pool as well. 
+gtg tho so will run overnight to get a decent amount of data and then analyze in the morning

@@ -19,6 +19,19 @@ import pyRAPL
 BATCH_MULTIPLIER=5
 DEVICE = 'cpu'
 
+# conv vals: batch size, in chan, out chan, im side length, k side length, stride
+CONV_MIN = torch.Tensor([32, 1, 1, 8, 3, 1])
+CONV_MAX = torch.Tensor([2048, 16, 16, 64, 9, 4])
+
+# linear vals: batch_size, in_size, out_size
+LINEAR_MIN = torch.Tensor([32, 1, 1])
+LINEAR_MAX = torch.Tensor([2048, 512, 512])
+
+# pool vals:
+POOL_MIN = torch.Tensor([])
+POOL_MAX = torch.Tensor([])
+
+
 class ConvLayer(nn.Module):
     def __init__(self, in_chan, out_chan, k_size, stride):
         super(ConvLayer, self).__init__()
@@ -114,40 +127,69 @@ def gather_conv(batch_size, in_chan, out_chan, side_len, k_size, stride):
     return gather_epoch(net, batch_size, in_size, out_size)
 
 
+def gather_linear(batch_size, in_size, out_size):
+    net = LinearLayer(in_size, out_size)
+    return gather_epoch(net, batch_size, [in_size], [out_size])
+
+
+def gather_pool(batch_size, k_size, stride):
+    net = PoolLayer(k_size, stride)
+
+    # paper uses  input tensor size, the stride size, the kernel size and out size
+    #return gather_epoch(net, batch_size, [in_size], [out_size]) # TODO: we should get in size...
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-nc', '--n_conv', default=10, help='number of data points to generate for conv layer')
-    parser.add_argument('-np', '--n_pool', default=10, help='number of data points to generate for pooling layer')
-    parser.add_argument('-nl', '--n_linear', default=10, help='number of data points to generate for linear layer')
-    parser.add_argument('-na', '--n_avg', default=10, help='number of iteratios to average over per data point')
+    parser.add_argument('-nc', '--n_conv', default=10, type=int, help='number of data points to generate for conv layer')
+    parser.add_argument('-np', '--n_pool', default=10, type=int, help='number of data points to generate for pooling layer')
+    parser.add_argument('-nl', '--n_linear', default=10, type=int, help='number of data points to generate for linear layer')
+    parser.add_argument('-na', '--n_avg', default=10, type=int, help='number of iteratios to average over per data point')
 
     args = parser.parse_args()
 
     pyRAPL.setup()
 
-    conv_min = torch.Tensor([32, 1, 1, 8, 3, 1])
-    conv_max = torch.Tensor([2048, 16, 16, 64, 9, 4])
-
     with open(f'out/conv.csv', 'w+') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
         writer.writerow(['batch_size', 'in_chan', 'out_chan', 'side_len', 'k_size', 'stride', 'for_energy', 'for_time', 'back_energy', 'back_time'])
 
+        # conv loop
         for i in range(args.n_conv):
-            
             # generate the conv args
             conv_args = None
             while conv_args is None:
-                conv_args = ((torch.rand(6) * (conv_max - conv_min)) + conv_min).type(torch.int32)
+                conv_args = ((torch.rand(6) * (CONV_MAX - CONV_MIN)) + CONV_MIN).type(torch.int32)
 
                 if conv_args[4] > conv_args[3]:
                     conv_args = None # regen if k size > im size
 
-            print(f'conv args {conv_args.tolist()}:\t', end='', flush=True)    
+            print(f'conv {i}, args={conv_args.tolist()}:\t', end='', flush=True)    
 
+            # repeatedly run and average
             res = [[gather_conv(*conv_args.tolist())] for j in range(args.n_avg)]
             means = np.mean(res, axis=0).tolist()[0]
 
+            # store results
             print(f'{means[0]/1_000_000:.4f}J, {means[1]/1_000_000:.4f}s, {means[2]/1_000_000:.4f}J, {means[3]/1_000_000:.4f}s')
             writer.writerow(conv_args.tolist() + means) 
 
 
+    with open(f'out/linear.csv', 'w+') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',')
+        writer.writerow(['batch_size', 'in_size', 'out_size', 'for_energy', 'for_time', 'back_energy', 'back_time'])
+
+        # linear loop
+        for i in range(args.n_linear):
+            # generate the linear args
+            linear_args = ((torch.rand(3) * (LINEAR_MAX - LINEAR_MIN)) + LINEAR_MIN).type(torch.int32)
+
+            print(f'linear {i}, args={linear_args.tolist()}:\t', end='', flush=True)    
+
+            # repeatedly run and average
+            res = [[gather_linear(*linear_args.tolist())] for j in range(args.n_avg)]
+            means = np.mean(res, axis=0).tolist()[0]
+
+            # store results
+            print(f'{means[0]/1_000_000:.4f}J, {means[1]/1_000_000:.4f}s, {means[2]/1_000_000:.4f}J, {means[3]/1_000_000:.4f}s')
+            writer.writerow(linear_args.tolist() + means) 
