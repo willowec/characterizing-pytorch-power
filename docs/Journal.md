@@ -126,3 +126,27 @@ WEVE DONE IT (mostly) (a little)
 Managed to get 3,4,5 working for conv and linear. 
 need to do pool as well. 
 gtg tho so will run overnight to get a decent amount of data and then analyze in the morning
+
+## 4/24/2025
+
+Seems my run crashed last night.
+It failed for conv_args = Tensor([1558, 15, 4, 37, 5, 3]).type(torch.int32).
+However, rerunning with that set doesn't redo it.
+What's up?
+
+      File "/home/willow/dev/characterizing-pytorch-power/src/gen_dataset.py", line 116, in gather_epoch
+        return train_one_epoch(net, train_loader, optimizer)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/home/willow/dev/characterizing-pytorch-power/src/gen_dataset.py", line 100, in train_one_epoch
+        return np.mean(forward_energy), np.mean(forward_time), np.mean(backward_energy), np.mean(backward_time)
+                                                              ^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/home/willow/dev/characterizing-pytorch-power/src/.venv/lib/python3.11/site-packages/numpy/_core/fromnumeric.py", line 3904, in mean
+        return _methods._mean(a, axis=axis, dtype=dtype,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/home/willow/dev/characterizing-pytorch-power/src/.venv/lib/python3.11/site-packages/numpy/_core/_methods.py", line 120, in _mean
+        arr = asanyarray(a)
+              ^^^^^^^^^^^^^
+    ValueError: setting an array element with a sequence. The requested array has an inhomogeneous shape after 1 dimensions. The detected shape was (5,) + inhomogeneous part.
+
+It really kind of just looks like somehow the data result arrays are getting messed up.
+Is there a branching path I missed?

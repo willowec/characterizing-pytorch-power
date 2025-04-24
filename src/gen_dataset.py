@@ -10,7 +10,8 @@ from torch.utils.data import TensorDataset, DataLoader
 
 import numpy as np
 import argparse
-import csv
+import csv, os, datetime
+from pathlib import Path
 
 import pyRAPL
 
@@ -97,6 +98,11 @@ def train_one_epoch(model, train_loader, optimizer):
         backward_energy.append(meter.result.pkg)
         backward_time.append(meter.result.duration)
 
+    forward_energy = np.asarray(forward_energy)
+    forward_time = np.asarray(forward_time)
+    backward_energy = np.asarray(backward_energy)
+    backward_time = np.asarray(backward_time)
+
     return np.mean(forward_energy), np.mean(forward_time), np.mean(backward_energy), np.mean(backward_time)
 
 
@@ -150,7 +156,10 @@ if __name__ == "__main__":
 
     pyRAPL.setup()
 
-    with open(f'out/conv.csv', 'w+') as csvfile:
+    out_dir = Path(f"out/{os.uname().nodename}-{datetime.datetime.now().isoformat().replace(':', '-').split('.')[0]}")
+    out_dir.mkdir(exist_ok=True, parents=True)
+
+    with open(out_dir.joinpath('conv.csv'), 'w+') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
         writer.writerow(['batch_size', 'in_chan', 'out_chan', 'side_len', 'k_size', 'stride', 'for_energy', 'for_time', 'back_energy', 'back_time'])
 
@@ -175,7 +184,7 @@ if __name__ == "__main__":
             writer.writerow(conv_args.tolist() + means) 
 
 
-    with open(f'out/linear.csv', 'w+') as csvfile:
+    with open(out_dir.joinpath('linear.csv'), 'w+') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
         writer.writerow(['batch_size', 'in_size', 'out_size', 'for_energy', 'for_time', 'back_energy', 'back_time'])
 
