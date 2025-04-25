@@ -150,3 +150,8 @@ What's up?
 
 It really kind of just looks like somehow the data result arrays are getting messed up.
 Is there a branching path I missed?
+
+## 4/25/2025 
+
+I got the full run done on broadwell-ep at least, so now its time for model creation/analysis.
+Can't devote too much time though, I need to have my cyber security final project on lock by Thursday.
