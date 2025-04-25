@@ -11,4 +11,5 @@ sympy
 torch
 torchvision
 typing_extensions
-
+scikit-learn
+pandas

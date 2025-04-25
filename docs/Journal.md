@@ -155,3 +155,17 @@ Is there a branching path I missed?
 
 I got the full run done on broadwell-ep at least, so now its time for model creation/analysis.
 Can't devote too much time though, I need to have my cyber security final project on lock by Thursday.
+
+Lets use [sklearn PolynomialFeatures](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PolynomialFeatures.html)
+
+...
+
+So I hit some pretty extreme BS here. 
+On my laptop, the results are totally unreasonable and unbelievably bad.
+But when I do it in a google notebook its tootally fine.
+Is this an install issue or am I missing a tiny difference that isnt so tiny?
+
+...
+
+whelp, must have been some stupid mistake.
+Working now, more or less.
