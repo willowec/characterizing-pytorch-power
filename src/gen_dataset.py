@@ -29,8 +29,8 @@ LINEAR_MIN = torch.Tensor([32, 1, 1])
 LINEAR_MAX = torch.Tensor([2048, 512, 512])
 
 # pool vals: batch_size, k side length, stride, in_chan, im side length
-POOL_MIN = torch.Tensor([32, 3, 3, 8])
-POOL_MAX = torch.Tensor([2048, 15, 64])
+POOL_MIN = torch.Tensor([32, 3, 1, 3, 8])
+POOL_MAX = torch.Tensor([2048, 15, 8, 64, 64])
 
 
 class ConvLayer(nn.Module):
@@ -74,7 +74,9 @@ def train_one_epoch(model, train_loader, optimizer):
 
     for batch_idx, (data, label) in enumerate(train_loader):
         data, label = data.to(DEVICE), label.to(DEVICE)
-        optimizer.zero_grad()
+        
+        if optimizer is not None:
+            optimizer.zero_grad()
 
         # stat energy of forward pass
         meter = pyRAPL.Measurement('bar')
@@ -87,16 +89,20 @@ def train_one_epoch(model, train_loader, optimizer):
         forward_time.append(meter.result.duration)
 
         # stat energy of backward pass
-        meter = pyRAPL.Measurement('bar')
-        meter.begin()
+        if optimizer is not None:
+            meter = pyRAPL.Measurement('bar')
+            meter.begin()
 
-        loss = F.mse_loss(output, label)
-        loss.backward()
-        optimizer.step()
+            loss = F.mse_loss(output, label)
+            loss.backward()
+            optimizer.step()
 
-        meter.end()
-        backward_energy.append(meter.result.pkg)
-        backward_time.append(meter.result.duration)
+            meter.end()
+            backward_energy.append(meter.result.pkg)
+            backward_time.append(meter.result.duration)
+        else:
+            backward_energy.append(0)
+            backward_time.append(0)
 
     forward_energy = np.asarray(forward_energy)
     forward_time = np.asarray(forward_time)
@@ -116,8 +122,13 @@ def gather_epoch(net, batch_size, in_size, out_size):
             TensorDataset(torch.rand(data_size, *in_size), 
                           torch.rand(data_size, *out_size)), 
             batch_size=batch_size, shuffle=True
-    )    
-    optimizer = torch.optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    )
+
+    # handle layers with no backwards pass, like pool
+    if len(list(net.parameters())) > 0:
+        optimizer = torch.optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    else:
+        optimizer = None
 
     return train_one_epoch(net, train_loader, optimizer)
 
@@ -217,7 +228,7 @@ if __name__ == "__main__":
         # pool loop
         for i in range(args.n_pool):
             # generate the pool args
-            pool_args = ((torch.rand(3) * (POOL_MAX - POOL_MIN)) + POOL_MIN).type(torch.int32)
+            pool_args = ((torch.rand(len(POOL_MAX)) * (POOL_MAX - POOL_MIN)) + POOL_MIN).type(torch.int32)
 
             print(f'pool {i}, args={pool_args.tolist()}:\t', end='', flush=True)    
 
