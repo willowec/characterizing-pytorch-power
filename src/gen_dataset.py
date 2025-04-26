@@ -22,15 +22,15 @@ DEVICE = 'cpu'
 
 # conv vals: batch size, in chan, out chan, im side length, k side length, stride
 CONV_MIN = torch.Tensor([32, 1, 1, 8, 3, 1])
-CONV_MAX = torch.Tensor([2048, 16, 16, 64, 9, 4])
+CONV_MAX = torch.Tensor([2048, 16, 64, 64, 9, 4])
 
 # linear vals: batch_size, in_size, out_size
 LINEAR_MIN = torch.Tensor([32, 1, 1])
 LINEAR_MAX = torch.Tensor([2048, 512, 512])
 
-# pool vals:
-POOL_MIN = torch.Tensor([])
-POOL_MAX = torch.Tensor([])
+# pool vals: batch_size, k side length, stride, in_chan, im side length
+POOL_MIN = torch.Tensor([32, 3, 3, 8])
+POOL_MAX = torch.Tensor([2048, 15, 64])
 
 
 class ConvLayer(nn.Module):
@@ -138,11 +138,17 @@ def gather_linear(batch_size, in_size, out_size):
     return gather_epoch(net, batch_size, [in_size], [out_size])
 
 
-def gather_pool(batch_size, k_size, stride):
+def gather_pool(batch_size, k_size, stride, chan, side_len):
     net = PoolLayer(k_size, stride)
 
-    # paper uses  input tensor size, the stride size, the kernel size and out size
-    #return gather_epoch(net, batch_size, [in_size], [out_size]) # TODO: we should get in size...
+    in_size = (chan, side_len, side_len)
+    out_size = (
+        int((side_len - (k_size-1) - 1) / stride + 1),
+        int((side_len - (k_size-1) - 1) / stride + 1),
+    )
+
+    return gather_epoch(net, batch_size, in_size, out_size)
+
 
 
 if __name__ == "__main__":
@@ -202,3 +208,23 @@ if __name__ == "__main__":
             # store results
             print(f'{means[0]/1_000_000:.4f}J, {means[1]/1_000_000:.4f}s, {means[2]/1_000_000:.4f}J, {means[3]/1_000_000:.4f}s')
             writer.writerow(linear_args.tolist() + means) 
+
+
+    with open(out_dir.joinpath('pool.csv'), 'w+') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',')
+        writer.writerow(['batch_size', 'in_size', 'out_size', 'for_energy', 'for_time', 'back_energy', 'back_time'])
+
+        # pool loop
+        for i in range(args.n_pool):
+            # generate the pool args
+            pool_args = ((torch.rand(3) * (POOL_MAX - POOL_MIN)) + POOL_MIN).type(torch.int32)
+
+            print(f'pool {i}, args={pool_args.tolist()}:\t', end='', flush=True)    
+
+            # repeatedly run and average
+            res = [[gather_pool(*pool_args.tolist())] for j in range(args.n_avg)]
+            means = np.mean(res, axis=0).tolist()[0]
+
+            # store results
+            print(f'{means[0]/1_000_000:.4f}J, {means[1]/1_000_000:.4f}s, {means[2]/1_000_000:.4f}J, {means[3]/1_000_000:.4f}s')
+            writer.writerow(pool_args.tolist() + means) 
