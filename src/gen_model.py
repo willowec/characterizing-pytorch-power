@@ -10,7 +10,7 @@ import numpy as np
 
 from sklearn.model_selection import train_test_split 
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
-from sklearn.linear_model import LinearRegression, LassoCV
+from sklearn.linear_model import LinearRegression, LassoCV, Lasso
 from sklearn.metrics import root_mean_squared_error
 
 
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     parser.add_argument('data_file', type=Path, help='path to the layer data')
     parser.add_argument('--search', action='store_true', help='search for the best order for this problem')
     parser.add_argument('-d', '--degree', type=int, default=1, help='polynomial degree to use')
-    parser.add_argument('-N', '--N_sets', type=int, default=10, help='the number fo times to randomize the train/test data and re-train')
+    parser.add_argument('-N', '--N_sets', type=int, default=1, help='the number fo times to randomize the train/test data and re-train')
     parser.add_argument('--start', type=int, default=0)
     parser.add_argument('--end', type=int, default=-1)
 
@@ -85,12 +85,12 @@ if __name__ == "__main__":
     df = df[df['for_time'] >= 0]
     df = df[df['back_time'] >= 0]
 
-    
     df['for_energy'] /= 1e6 # convert to Joules
     df['back_energy'] /= 1e6 # convert to Joules
     df['for_time'] /=1e6 # convert to seconds
     df['back_time'] /=1e6 # convert to seconds
 
+    # extract x and y features from data
     X = df.drop(columns=['for_energy', 'for_time', 'back_energy', 'back_time'])
     y = df['for_energy']
 
@@ -102,11 +102,15 @@ if __name__ == "__main__":
     for i in range(args.N_sets):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
 
-        lin = LassoCV()
+        scaler = StandardScaler()
+        X_train_scaler = scaler.fit_transform(X_train)
+        X_test_scaler = scaler.transform(X_test)
+
+        lin = Lasso()
 
         poly = PolynomialFeatures(degree=args.degree)
-        X_train_poly = poly.fit_transform(X_train)
-        X_test_poly = poly.transform(X_test)
+        X_train_poly = poly.fit_transform(X_train_scaler)
+        X_test_poly = poly.transform(X_test_scaler)
 
         poly.fit(X_train_poly, y_train)
         lin.fit(X_train_poly, y_train)
