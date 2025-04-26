@@ -169,3 +169,44 @@ Is this an install issue or am I missing a tiny difference that isnt so tiny?
 
 whelp, must have been some stupid mistake.
 Working now, more or less.
+
+...
+
+Yep, got it running! I'm noticing that the RMSE can be wildly different though depending on how the randomization goes, like orders of magnitude different. In the paper the use a really small dataset, smaller than what I have here, and cross-validation ([wikipedia](https://en.wikipedia.org/wiki/Cross-validation_(statistics))). Is that a way to make this situation better?
+
+## 4/26/2025
+
+Remember, for a good grade this project must:
+- be a complete research study including literature review
+- Include new idea development (can be incremental)
+- and some preliminary experiments
+- not sufficient to simply reproduce an experiment
+
+Is additionally predicting backward pass a "new idea" incrementally? Will need to make that clear in the report
+
+So things are still behaving very strangely. 
+For some reason, I either get really bad train performance and perfect test performance, or the other way around.
+This is true when I use Lasso as the linear model as well.
+See:
+
+    py .\gen_model.py .\out\broadwell-ep-2025-04-24T16-29-41\conv.csv -d 2
+    Set 0: train RMSE=0.75  test RMSE=165.83
+    Set 1: train RMSE=0.68  test RMSE=165.82
+    Set 2: train RMSE=94.94 test RMSE=14.12
+    Set 3: train RMSE=94.78 test RMSE=12.21
+    Set 4: train RMSE=0.71  test RMSE=165.83
+    Set 5: train RMSE=94.87 test RMSE=15.68
+    Set 6: train RMSE=95.31 test RMSE=19.74
+    Set 7: train RMSE=94.66 test RMSE=14.93
+    Set 8: train RMSE=0.86  test RMSE=165.79
+    Set 9: train RMSE=94.75 test RMSE=12.55
+
+Why such a flip-floppy set? What is going on here?
+
+...
+
+So I added some functionality to only use certain rows of the input data, and it seems like if row 668 of conv is included everything breaks.
+Finally something!
+You can't have negative energy dumbass!
+
+![One of the rows has negative energy data](./img/4_26_negative_energy.png)
