@@ -8,55 +8,61 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
+import warnings
+
 from sklearn.model_selection import train_test_split 
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 from sklearn.linear_model import LinearRegression, LassoCV, Lasso
 from sklearn.metrics import root_mean_squared_error
+from sklearn.exceptions import ConvergenceWarning
 
-
-def train_model(X_train, y_train, degree):
+def train_model(X, y, lin, degree):
     '''
-    Trains a polynomial regression of order degree
-    '''
-
-    lin = LinearRegression()
-    poly = PolynomialFeatures(degree=degree)
-
-    X_poly_train = poly.fit_transform(X_train)
-    
-    poly.fit(X_poly_train, y_train)
-    lin.fit(X_poly_train, y_train)
-
-    return lin, poly
-
-
-def pred_model(model, poly, X):
-    '''
-    Forward pass a linear regression model
-    '''
-    X_poly = poly.transform(X)
-    return model.predict(X_poly)
-
-
-def search_orders(X, y, train_split=.25, max_order=6):
-    '''
-    creates a model for each order and tests it to find the one with the lowest test error
-    TODO since this seems to give inconsistent results maybe cross-validation would be better
+    Trains a polynomial regression of order degree on linear model lin
     '''
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
 
-    errs = []
-    for i in range(max_order):
-        try:
-            lin = train_model(X_train, y_train, i)
-            
-            y_pred_test = pred_model(lin, X_test, i)
-            errs.append(root_mean_squared_error(y_test, y_pred_test))
-        except ValueError as e:
-            break # we probably tried an order that was too big 
+    scaler = StandardScaler()
+    X_train_scaler = scaler.fit_transform(X_train)
+    X_test_scaler = scaler.transform(X_test)
 
-    return np.argmin(errs), errs
+    poly = PolynomialFeatures(degree=degree)
+    X_train_poly = poly.fit_transform(X_train_scaler)
+    X_test_poly = poly.transform(X_test_scaler)
 
+    poly.fit(X_train_poly, y_train)
+    lin.fit(X_train_poly, y_train)
+
+    y_pred_test = lin.predict(X_test_poly)
+    y_pred_train = lin.predict(X_train_poly)
+
+    test_err = root_mean_squared_error(y_test, y_pred_test)
+    train_err = root_mean_squared_error(y_train, y_pred_train)
+
+    return lin, poly, scaler, test_err, train_err
+
+
+def search_models_orders(X, y, lins: list, degrees: int, n_avg: int=10):
+    '''
+    Searches the entire space to look for the best combination of model and polynomial degree
+    '''
+    for lin in lins:
+        for degree in range(1, degrees+1):
+            test_errs = []
+            train_errs = []
+
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=ConvergenceWarning)
+
+                for i in range(n_avg):
+                    lin, poly, scaler, test_err, train_err = train_model(X, y, lin, degree)
+                    test_errs.append(test_err)
+                    train_errs.append(train_err)
+
+                test_err = np.mean(test_errs)
+                train_err = np.mean(train_errs)
+
+                print(f'Model {lin} with degree {degree}:\t{test_err=:.3f}\t{train_err=:.3f}')
 
 
 if __name__ == "__main__":
@@ -95,30 +101,10 @@ if __name__ == "__main__":
     y = df['for_energy']
 
     if args.search:
-        order, test_errs = search_orders(X, y)
-        print(f'Best order: {order}. Test errors: {test_errs}')
+        search_models_orders(X, y, [LinearRegression(), Lasso(), LassoCV()], args.degree)
         quit()
 
     for i in range(args.N_sets):
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
-
-        scaler = StandardScaler()
-        X_train_scaler = scaler.fit_transform(X_train)
-        X_test_scaler = scaler.transform(X_test)
-
-        lin = Lasso()
-
-        poly = PolynomialFeatures(degree=args.degree)
-        X_train_poly = poly.fit_transform(X_train_scaler)
-        X_test_poly = poly.transform(X_test_scaler)
-
-        poly.fit(X_train_poly, y_train)
-        lin.fit(X_train_poly, y_train)
-
-        y_pred_test = lin.predict(X_test_poly)
-        y_pred_train = lin.predict(X_train_poly)
-
-        test_err = root_mean_squared_error(y_test, y_pred_test)
-        train_err = root_mean_squared_error(y_train, y_pred_train)
+        lin, poly, scaler, test_err, train_err = train_model(X, y, Lasso(), args.degree)
 
         print(f"{i}: {test_err=}\t{train_err=}")
