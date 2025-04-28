@@ -29,8 +29,8 @@ LINEAR_MIN = torch.Tensor([32, 1, 1])
 LINEAR_MAX = torch.Tensor([2048, 512, 512])
 
 # pool vals: batch_size, k side length, stride, in_chan, im side length
-POOL_MIN = torch.Tensor([32, 3, 1, 3, 8])
-POOL_MAX = torch.Tensor([2048, 15, 8, 64, 64])
+POOL_MIN = torch.Tensor([32, 2, 1, 3, 128]) # min imsize needs to be large enough so that max stride and kernel wont produce 0 outsize
+POOL_MAX = torch.Tensor([2048, 14, 8, 64, 256])
 
 
 class ConvLayer(nn.Module):
