@@ -210,3 +210,8 @@ Finally something!
 You can't have negative energy dumbass!
 
 ![One of the rows has negative energy data](./img/4_26_negative_energy.png)
+
+Oh, and remember that for pyRAPL we need to reset `sudo chmod -R a+r /sys/class/powercap/intel-rapl` on every reboot
+
+Okay, set up for pooling now.
+Running on raptorlake overnight.

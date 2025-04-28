@@ -104,10 +104,18 @@ def train_one_epoch(model, train_loader, optimizer):
             backward_energy.append(0)
             backward_time.append(0)
 
-    forward_energy = np.asarray(forward_energy)
-    forward_time = np.asarray(forward_time)
-    backward_energy = np.asarray(backward_energy)
-    backward_time = np.asarray(backward_time)
+    try:
+        forward_energy = np.asarray(forward_energy)
+        forward_time = np.asarray(forward_time)
+        backward_energy = np.asarray(backward_energy)
+        backward_time = np.asarray(backward_time)
+    except ValueError as e:
+        # sometimes we get "The requested array has an inhomogeneous shape after 1 dimensions."
+        # instead of fixing the problem, just nuke this datapoint
+        forward_energy = [-1]
+        forward_time = [-1]
+        backward_energy = [-1]
+        backward_time = [-1]
 
     return np.mean(forward_energy), np.mean(forward_time), np.mean(backward_energy), np.mean(backward_time)
 
