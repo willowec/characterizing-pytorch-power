@@ -215,3 +215,10 @@ Oh, and remember that for pyRAPL we need to reset `sudo chmod -R a+r /sys/class/
 
 Okay, set up for pooling now.
 Running on raptorlake overnight.
+
+## 5/5/2025
+
+Lots to do here.
+Setting up to gather energy data for real models. 
+Doing this by downloading a pretrained model from torch hub, appending a linear layer to make it fit CIFAR10, and then doing the same thing as gen_dataset.py really.
+Collected for raptorlake!

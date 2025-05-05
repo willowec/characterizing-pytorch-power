@@ -6,6 +6,7 @@ __pycache__/
 # project specific files
 tmp.json
 results.txt
+dataset
 
 # C extensions
 *.so
