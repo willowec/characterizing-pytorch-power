@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 import numpy as np
+import pickle
 
 import warnings
 
@@ -15,6 +16,11 @@ from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 from sklearn.linear_model import LinearRegression, LassoCV, Lasso
 from sklearn.metrics import root_mean_squared_error
 from sklearn.exceptions import ConvergenceWarning
+
+# cause enbies really just do want to have fun so desparately
+COLOR_GREEN = "\x1b[92m"
+COLOR_RED = "\x1b[91m"
+COLOR_RESET = "\x1b[0m"
 
 def train_model(X, y, lin, degree):
     '''
@@ -42,10 +48,13 @@ def train_model(X, y, lin, degree):
     return lin, poly, scaler, test_err, train_err
 
 
-def search_models_orders(X, y, lins: list, degrees: int, n_avg: int=10):
+def search_models_orders(X, y, lins: list, degrees: int, n_avg: int=10) -> tuple:
     '''
     Searches the entire space to look for the best combination of model and polynomial degree
+    returns the best model as a tuple of (linear model, degree, test err)
     '''
+    best = (lins[0], degrees, np.inf) # the best model (arch, degree, test err)
+
     for lin in lins:
         for degree in range(1, degrees+1):
             test_errs = []
@@ -62,7 +71,22 @@ def search_models_orders(X, y, lins: list, degrees: int, n_avg: int=10):
                 test_err = np.mean(test_errs)
                 train_err = np.mean(train_errs)
 
+                if test_err < best[-1]:
+                    # this test err was better than the previous best
+                    best = (lin, degree, test_err)
+
                 print(f'Model {lin} with degree {degree}:\t{test_err=:.3f}\t{train_err=:.3f}')
+
+    print(f'Best model: {best[0]} with degree {best[1]}:\t{COLOR_GREEN}test_err={best[-1]:.3f}{COLOR_RESET}')
+    return best
+
+
+def save_model(model: tuple, path: Path):
+    '''
+    Save a model to pickle file
+    '''
+    with open (path, 'wb') as handle:
+        pickle.dump(model, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == "__main__":
@@ -101,7 +125,12 @@ if __name__ == "__main__":
     y = df['for_energy']
 
     if args.search:
-        search_models_orders(X, y, [LinearRegression(), Lasso(), LassoCV()], args.degree)
+        model = search_models_orders(X, y, [LinearRegression(), Lasso(), LassoCV()], args.degree)
+        
+        model_dir = Path(f"out/models/{args.data_file.parts[1].split('-')[0]}")
+        model_dir.mkdir(exist_ok=True, parents=True)
+        save_model(model, model_dir.joinpath(args.data_file.stem + '.pickle'))
+        
         quit()
 
     for i in range(args.N_sets):
