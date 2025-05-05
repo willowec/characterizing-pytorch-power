@@ -53,7 +53,7 @@ def search_models_orders(X, y, lins: list, degrees: int, n_avg: int=10) -> tuple
     Searches the entire space to look for the best combination of model and polynomial degree
     returns the best model as a tuple of (linear model, degree, test err)
     '''
-    best = (lins[0], degrees, np.inf) # the best model (arch, degree, test err)
+    best = (lins[0], degrees, None, None, np.inf) # the best model (arch, degree, poly, scaler, test err)
 
     for lin in lins:
         for degree in range(1, degrees+1):
@@ -73,7 +73,7 @@ def search_models_orders(X, y, lins: list, degrees: int, n_avg: int=10) -> tuple
 
                 if test_err < best[-1]:
                     # this test err was better than the previous best
-                    best = (lin, degree, test_err)
+                    best = (lin, degree, poly, scaler, test_err)
 
                 print(f'Model {lin} with degree {degree}:\t{test_err=:.3f}\t{train_err=:.3f}')
 
@@ -92,9 +92,9 @@ def save_model(model: tuple, path: Path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('data_file', type=Path, help='path to the layer data')
-    parser.add_argument('--search', action='store_true', help='search for the best order for this problem')
+    parser.add_argument('--search', action='store_true', default=True, help='search for the best order for this problem')
     parser.add_argument('-d', '--degree', type=int, default=1, help='polynomial degree to use')
-    parser.add_argument('-N', '--N_sets', type=int, default=1, help='the number fo times to randomize the train/test data and re-train')
+    parser.add_argument('-N', '--N_sets', type=int, default=1, help='the number of times to randomize the train/test data and re-train')
     parser.add_argument('--start', type=int, default=0)
     parser.add_argument('--end', type=int, default=-1)
 
@@ -134,6 +134,7 @@ if __name__ == "__main__":
         quit()
 
     for i in range(args.N_sets):
+        # non-search use case frankly defunct
         lin, poly, scaler, test_err, train_err = train_model(X, y, Lasso(), args.degree)
 
         print(f"{i}: {test_err=}\t{train_err=}")

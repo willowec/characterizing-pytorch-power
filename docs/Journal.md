@@ -225,3 +225,10 @@ Collected for raptorlake!
 
 Now i gotta do the predictions but i wanna go outside and eat dinner and its just so nice out why would i ever do that??????/??/?/?//?     ?!?
 (dont forget tho that we are collecting and preicting PER BATCH values)
+
+Ah, damn this is more complicated than I thought. I need to actually get the input image size for every point in the model somehow. 
+What if the model has some layers that change the shape but aren't known?
+How do I handle that?
+
+Could we do this by somehow sending an image through the model and extracting its size at every turn? 
+This may be possible.

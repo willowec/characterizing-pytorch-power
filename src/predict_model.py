@@ -18,6 +18,7 @@ from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 from sklearn.linear_model import LinearRegression, LassoCV, Lasso
 from sklearn.metrics import root_mean_squared_error
 
+import numpy as np
 
 def flatten_modules(modules):
 	mods = []
@@ -28,6 +29,21 @@ def flatten_modules(modules):
 			mods += flatten_modules(module)
 
 	return mods
+
+
+def get_layer_data_size(modules, start_im_size: tuple):
+	'''
+	run an image through each of the modules and get the image size
+	'''
+	modules = flatten_modules(modules)
+
+	start_image = torch.Tensor(np.ones(start_im_size))
+	out = start_image
+
+	for module in modules:
+		print(module, end='\t')
+		out = module(out)
+		print(out.shape)
 
 
 def load_energy_model(model_path: Path) -> tuple:
@@ -59,42 +75,61 @@ def load_energy_models(models_dir: Path) -> tuple[tuple, tuple, tuple]:
 	return conv, linear, pool
 
 
-def predict_conv_layer(conv_model: tuple, layer: torch.nn.Module) -> tuple:
+def predict_conv_layer(conv_model: tuple, batch_size: int, im_side_len: int, layer: torch.nn.Conv2d) -> tuple:
 	'''
 	predict forward/backward energy consumption & time for one Conv2d layer 
 	'''
+	lin, poly, scaler, test_err = conv_model
+
 	# in: batch size, in chan, out chan, im side length, k side length, stride
+	X = torch.Tensor([batch_size, 
+				   layer.in_channels, 
+				   layer.out_channels,
+				   im_side_len,
+				   layer.kernel_size,
+				   layer.stride
+				   ])
+	X_scaled = scaler.transform(X)
+	X_poly = poly.transform(X_scaled)
+
+	pred = lin.predict(X_poly)
+
+	return pred
 
 
-def predict_linear_layer(conv_model: tuple, layer: torch.nn.Module) -> tuple:
+def predict_linear_layer(linear_model: tuple, batch_size: int, layer: torch.nn.Linear) -> tuple:
 	'''
 	predict forward/backward energy consumption & time for one linear layer 
 	'''
 	# in: batch_size, in_size, out_size
 
 
-def predict_pool_layer(conv_model: tuple, layer: torch.nn.Module) -> tuple:
+def predict_pool_layer(pool_model: tuple, batch_size: int, im_side_len: int, layer: torch.nn.MaxPool2d) -> tuple:
 	'''
 	predict forward/backward energy consumption & time for one pool layer 
 	'''
+
 	# in: batch_size, k side length, stride, in_chan, im side length
 
 
-def predict_cnn(energy_model: tuple, cnn_model: torch.nn.Module):
+
+
+def predict_cnn(energy_model: tuple, batch_size, cnn_model: torch.nn.Module):
 	'''
 	predict the energy consumption and execution time for forward and
 	backward passes of the 'cnn_model' using the three energy models (conv, linear, pool) in 'energy_model'
 	'''
 	conv, linear, pool = energy_model
 
+	predicted_vals = []
 	layers = flatten_modules(cnn_model.children())
 	for layer in layers:
 		if isinstance(layer, torch.nn.Conv2d):
-			print('conv')
+			predicted_vals.append(predict_conv_layer(conv, batch_size, layer))
 		if isinstance(layer, torch.nn.Linear):
-			print('linear')
+			predicted_vals.append(predict_linear_layer(linear, batch_size, layer))
 		if isinstance(layer, torch.nn.MaxPool2d):
-			print('pool')
+			predicted_vals.append(predict_pool_layer(pool, batch_size, layer))
 
 
 
@@ -111,5 +146,6 @@ if __name__ == '__main__':
 	# load CNN to estimate
 	model = torch.hub.load(args.hub, args.model_name)
 
-	prediction = predict_cnn(energy_model, model)
-	print(prediction)
+	get_layer_data_size(model.children(), (3, 64, 64))
+	#prediction = predict_cnn(energy_model, model)
+	#print(prediction)
