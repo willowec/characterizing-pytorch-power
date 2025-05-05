@@ -222,3 +222,6 @@ Lots to do here.
 Setting up to gather energy data for real models. 
 Doing this by downloading a pretrained model from torch hub, appending a linear layer to make it fit CIFAR10, and then doing the same thing as gen_dataset.py really.
 Collected for raptorlake!
+
+Now i gotta do the predictions but i wanna go outside and eat dinner and its just so nice out why would i ever do that??????/??/?/?//?     ?!?
+(dont forget tho that we are collecting and preicting PER BATCH values)
