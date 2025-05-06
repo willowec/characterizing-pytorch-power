@@ -245,3 +245,8 @@ I messed up the max pool feature saving.
 Do I need to rerun?
 NO!
 I can just manually add in the missing headers :))
+
+(regenning pool model has WAY better accuracy now)
+
+okay, silly news is that predicting on alexnet we get a ton of negatives... this may be a case of too many degrees?
+uh oh! trying to limit to three degrees or less sees total negaives still..

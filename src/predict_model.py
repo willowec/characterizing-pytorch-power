@@ -147,7 +147,6 @@ def predict_pool_layer(pool_model: tuple, batch_size: int, in_size: tuple, layer
 	return pred
 
 
-
 def predict_cnn(energy_model: tuple, batch_size: int, input_size: tuple, cnn_model: torch.nn.Module):
 	'''
 	predict the energy consumption and execution time for forward and
@@ -156,21 +155,27 @@ def predict_cnn(energy_model: tuple, batch_size: int, input_size: tuple, cnn_mod
 	conv, linear, pool = energy_model
 
 	predicted_vals = []
+	predicted_layers = []
 
 	layers = flatten_modules(cnn_model.children())
 	in_sizes = get_layer_data_size(layers, input_size)
 
 	for layer, in_size in zip(layers, in_sizes):
-		print(f'predicting {layer} with input size {in_size}')
+		#print(f'predicting {layer} with input size {in_size}')
 
 		if isinstance(layer, torch.nn.Conv2d):
 			predicted_vals.append(predict_conv_layer(conv, batch_size, in_size, layer))
+			predicted_layers.append(layer)
+
 		if isinstance(layer, torch.nn.Linear):
 			predicted_vals.append(predict_linear_layer(linear, batch_size, layer))
+			predicted_layers.append(layer)
+
 		if isinstance(layer, torch.nn.MaxPool2d):
 			predicted_vals.append(predict_pool_layer(pool, batch_size, in_size, layer))
+			predicted_layers.append(layer)
 
-	return predicted_vals
+	return predicted_vals, predicted_layers
 
 
 if __name__ == '__main__':
@@ -189,5 +194,9 @@ if __name__ == '__main__':
 	# load CNN to estimate
 	model = torch.hub.load(args.hub, args.model_name)
 
-	prediction = predict_cnn(energy_model, args.batch_size, args.input_size, model)
-	print(prediction)
+	vals, layers = predict_cnn(energy_model, args.batch_size, args.input_size, model)
+	
+	for val, layer in zip(vals, layers):
+		print(f'{layer}:\t{val}')
+
+	print(f'Total result: {np.sum(vals)}')
