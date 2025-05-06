@@ -1,4 +1,4 @@
-batch_size,in_size,out_size,for_energy,for_time,back_energy,back_time
+batch_size,k_side_length,stride,in_chan,im_side_length,for_energy,for_time,back_energy,back_time
 1660,7,1,8,51,15165635.65,403374.02384,0.0,0.0
 872,3,2,13,80,3861796.16,92006.95109999999,0.0,0.0
 466,6,1,27,75,29360707.830000002,669706.57116,0.0,0.0
