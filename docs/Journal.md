@@ -275,3 +275,6 @@ YIKES
 Okay, cut your losses.
 You *actually* have a $91$ in this class even if you don't turn in your work. So...?
 Maybe just do the demo
+
+yeah, checked the scale and thats an **A-**.
+lets just add a simple way to how the results for the real models compared to the predictions and then call it good
