@@ -232,3 +232,10 @@ How do I handle that?
 
 Could we do this by somehow sending an image through the model and extracting its size at every turn? 
 This may be possible.
+
+## 5/6/2025
+
+okay yayyy fixed the layer count thing! had some issues with my model generation but thats done.
+Now i did forget to create models for all of the other features soooooooooooooooooooooooooooooo
+
+okay genning all models now :)))))

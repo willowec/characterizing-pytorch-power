@@ -33,7 +33,6 @@ def train_model(X, y, lin, degree):
     X_train_scaler = scaler.fit_transform(X_train)
     X_test_scaler = scaler.transform(X_test)
 
-
     poly = PolynomialFeatures(degree=degree)
     X_train_poly = poly.fit_transform(X_train_scaler, y_train)
     X_test_poly = poly.transform(X_test_scaler)
@@ -77,7 +76,7 @@ def search_models_orders(X, y, lins: list, degrees: int, n_avg: int=10) -> tuple
 
                 print(f'Model {lin} with degree {degree}:\t{test_err=:.3f}\t{train_err=:.3f}')
 
-    print(f'Best model: {best[0]} (input features {best[0].n_features_in_}) with degree {best[1]}:\t{COLOR_GREEN}test_err={best[-1]:.3f}{COLOR_RESET}')
+    print(f'Best model: {best[0]} (input features {best[0].n_features_in_}) with degree {best[1]}:\t{COLOR_GREEN}test_err={best[-1]:.3e}{COLOR_RESET}')
     return best
 
 
@@ -122,15 +121,20 @@ if __name__ == "__main__":
 
     # extract x and y features from data
     X = df.drop(columns=['for_energy', 'for_time', 'back_energy', 'back_time'])
-    y = df['for_energy']
+    y = df[['for_energy', 'for_time', 'back_energy', 'back_time']]
 
     if args.search:
-        model = search_models_orders(X, y, [LinearRegression, Lasso, LassoCV], args.degree)
-        
-        model_dir = Path(f"out/models/{args.data_file.parts[1].split('-')[0]}")
-        model_dir.mkdir(exist_ok=True, parents=True)
-        save_model(model, model_dir.joinpath(args.data_file.stem + '.pickle'))
-        
+        for column in y.columns:
+            print(f'Generating model for {column}:')
+
+            # gen model
+            model = search_models_orders(X, y[column], [LinearRegression, Lasso, LassoCV], args.degree)
+            
+            # save model
+            model_dir = Path(f"out/models/{args.data_file.parts[1].split('-')[0]}/{column}")
+            model_dir.mkdir(exist_ok=True, parents=True)
+            save_model(model, model_dir.joinpath(args.data_file.stem + '.pickle'))
+            
         quit()
 
     for i in range(args.N_sets):
