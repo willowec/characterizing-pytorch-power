@@ -26,19 +26,19 @@ def train_model(X, y, lin, degree):
     '''
     Trains a polynomial regression of order degree on linear model lin
     '''
+    lin = lin()
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
 
     scaler = StandardScaler()
     X_train_scaler = scaler.fit_transform(X_train)
     X_test_scaler = scaler.transform(X_test)
 
+
     poly = PolynomialFeatures(degree=degree)
-    X_train_poly = poly.fit_transform(X_train_scaler)
+    X_train_poly = poly.fit_transform(X_train_scaler, y_train)
     X_test_poly = poly.transform(X_test_scaler)
 
-    poly.fit(X_train_poly, y_train)
     lin.fit(X_train_poly, y_train)
-
     y_pred_test = lin.predict(X_test_poly)
     y_pred_train = lin.predict(X_train_poly)
 
@@ -55,7 +55,7 @@ def search_models_orders(X, y, lins: list, degrees: int, n_avg: int=10) -> tuple
     '''
     best = (lins[0], degrees, None, None, np.inf) # the best model (arch, degree, poly, scaler, test err)
 
-    for lin in lins:
+    for model in lins:
         for degree in range(1, degrees+1):
             test_errs = []
             train_errs = []
@@ -64,7 +64,7 @@ def search_models_orders(X, y, lins: list, degrees: int, n_avg: int=10) -> tuple
                 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
                 for i in range(n_avg):
-                    lin, poly, scaler, test_err, train_err = train_model(X, y, lin, degree)
+                    lin, poly, scaler, test_err, train_err = train_model(X.values, y.values, model, degree)
                     test_errs.append(test_err)
                     train_errs.append(train_err)
 
@@ -77,7 +77,7 @@ def search_models_orders(X, y, lins: list, degrees: int, n_avg: int=10) -> tuple
 
                 print(f'Model {lin} with degree {degree}:\t{test_err=:.3f}\t{train_err=:.3f}')
 
-    print(f'Best model: {best[0]} with degree {best[1]}:\t{COLOR_GREEN}test_err={best[-1]:.3f}{COLOR_RESET}')
+    print(f'Best model: {best[0]} (input features {best[0].n_features_in_}) with degree {best[1]}:\t{COLOR_GREEN}test_err={best[-1]:.3f}{COLOR_RESET}')
     return best
 
 
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     y = df['for_energy']
 
     if args.search:
-        model = search_models_orders(X, y, [LinearRegression(), Lasso(), LassoCV()], args.degree)
+        model = search_models_orders(X, y, [LinearRegression, Lasso, LassoCV], args.degree)
         
         model_dir = Path(f"out/models/{args.data_file.parts[1].split('-')[0]}")
         model_dir.mkdir(exist_ok=True, parents=True)
