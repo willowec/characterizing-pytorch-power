@@ -30,7 +30,7 @@ LINEAR_MAX = torch.Tensor([2048, 512, 512])
 
 # pool vals: batch_size, k side length, stride, in_chan, im side length
 POOL_MIN = torch.Tensor([32, 2, 1, 3, 50]) # min imsize needs to be large enough so that max stride and kernel wont produce 0 outsize
-POOL_MAX = torch.Tensor([2048, 10, 4, 32, 100])
+POOL_MAX = torch.Tensor([2048, 10, 4, 16, 100])
 
 
 class ConvLayer(nn.Module):
@@ -120,45 +120,58 @@ def train_one_epoch(model, train_loader, optimizer):
     return np.mean(forward_energy), np.mean(forward_time), np.mean(backward_energy), np.mean(backward_time)
 
 
-def gather_epoch(net, batch_size, in_size, out_size):
+def gather_epoch(net, dataloader):
     '''
     generates random data for a net, returns forward/backward energy/time
     '''
-    data_size = batch_size*BATCH_MULTIPLIER
-
-    train_loader = DataLoader(
-            TensorDataset(torch.rand(data_size, *in_size), 
-                          torch.rand(data_size, *out_size)), 
-            batch_size=batch_size, shuffle=True
-    )
-
     # handle layers with no backwards pass, like pool
     if len(list(net.parameters())) > 0:
         optimizer = torch.optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
     else:
         optimizer = None
 
-    return train_one_epoch(net, train_loader, optimizer)
+    return train_one_epoch(net, dataloader, optimizer)
 
 
-def gather_conv(batch_size, in_chan, out_chan, side_len, k_size, stride):
+def create_dataloader_conv(batch_size, in_chan, out_chan, side_len, k_size, stride):
+    '''
+    Creates a dataloader for the batch size, in and out size
+    '''
+    data_size = batch_size*BATCH_MULTIPLIER
+
     in_size = (in_chan, side_len, side_len)
     out_size = (out_chan, # calculated based on eqns at https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
                 int(((side_len - (k_size-1) - 1) / stride) + 1),
                 int(((side_len - (k_size-1) - 1) / stride) + 1)
                 )
 
-    net = ConvLayer(in_chan, out_chan, k_size, stride)
-    return gather_epoch(net, batch_size, in_size, out_size)
+    train_loader = DataLoader(
+            TensorDataset(torch.rand(data_size, *in_size), 
+                          torch.rand(data_size, *out_size)), 
+            batch_size=batch_size, shuffle=True
+    )
+    return train_loader
 
 
-def gather_linear(batch_size, in_size, out_size):
-    net = LinearLayer(in_size, out_size)
-    return gather_epoch(net, batch_size, [in_size], [out_size])
+def create_dataloader_linear(batch_size, in_size, out_size):
+    '''
+    Creates a dataloader for the batch size, in and out size
+    '''
+    data_size = batch_size*BATCH_MULTIPLIER
+
+    train_loader = DataLoader(
+            TensorDataset(torch.rand(data_size, in_size), 
+                          torch.rand(data_size, out_size)), 
+            batch_size=batch_size, shuffle=True
+    )
+    return train_loader
 
 
-def gather_pool(batch_size, k_size, stride, chan, side_len):
-    net = PoolLayer(k_size, stride)
+def create_dataloader_pool(batch_size, k_size, stride, chan, side_len):
+    '''
+    Creates a dataloader for the batch size, in and out size
+    '''
+    data_size = batch_size*BATCH_MULTIPLIER
 
     in_size = (chan, side_len, side_len)
     out_size = (
@@ -166,7 +179,12 @@ def gather_pool(batch_size, k_size, stride, chan, side_len):
         int((side_len - (k_size-1) - 1) / stride + 1),
     )
 
-    return gather_epoch(net, batch_size, in_size, out_size)
+    train_loader = DataLoader(
+            TensorDataset(torch.rand(data_size, *in_size), 
+                          torch.rand(data_size, *out_size)), 
+            batch_size=batch_size, shuffle=True
+    )
+    return train_loader
 
 
 
@@ -201,8 +219,13 @@ if __name__ == "__main__":
             print(f'conv {i}, args={conv_args.tolist()}:\t', end='', flush=True)    
 
             # repeatedly run and average
-            res = [[gather_conv(*conv_args.tolist())] for j in range(args.n_avg)]
-            means = np.mean(res, axis=0).tolist()[0]
+            res = []
+            dataloader = create_dataloader_conv(*conv_args.tolist())
+            net = ConvLayer(conv_args[1], conv_args[2], conv_args[4], conv_args[5]) # in chan, out chan, k size, stride
+            for j in range(args.n_avg):
+                res.append(gather_epoch(net, dataloader))
+
+            means = np.mean(res, axis=0).tolist()
 
             # store results
             print(f'{means[0]/1_000_000:.4f}J, {means[1]/1_000_000:.4f}s, {means[2]/1_000_000:.4f}J, {means[3]/1_000_000:.4f}s')
@@ -221,8 +244,13 @@ if __name__ == "__main__":
             print(f'linear {i}, args={linear_args.tolist()}:\t', end='', flush=True)    
 
             # repeatedly run and average
-            res = [[gather_linear(*linear_args.tolist())] for j in range(args.n_avg)]
-            means = np.mean(res, axis=0).tolist()[0]
+            res = []
+            dataloader = create_dataloader_linear(*linear_args.tolist())
+            net = LinearLayer(linear_args[1], linear_args[2]) # in size, out size
+            for j in range(args.n_avg):
+                res.append(gather_epoch(net, dataloader))
+            
+            means = np.mean(res, axis=0).tolist()
 
             # store results
             print(f'{means[0]/1_000_000:.4f}J, {means[1]/1_000_000:.4f}s, {means[2]/1_000_000:.4f}J, {means[3]/1_000_000:.4f}s')
@@ -231,7 +259,7 @@ if __name__ == "__main__":
 
     with open(out_dir.joinpath('pool.csv'), 'w+') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
-        writer.writerow(['batch_size', 'in_size', 'out_size', 'for_energy', 'for_time', 'back_energy', 'back_time'])
+        writer.writerow(['batch_size', 'k_side_length', 'stride', 'in_chan', 'im_side_length', 'for_energy', 'for_time', 'back_energy', 'back_time'])
 
         # pool loop
         for i in range(args.n_pool):
@@ -241,8 +269,13 @@ if __name__ == "__main__":
             print(f'pool {i}, args={pool_args.tolist()}:\t', end='', flush=True)    
 
             # repeatedly run and average
-            res = [[gather_pool(*pool_args.tolist())] for j in range(args.n_avg)]
-            means = np.mean(res, axis=0).tolist()[0]
+            res = []
+            dataloader = create_dataloader_pool(*pool_args.tolist())
+            net = PoolLayer(int(pool_args[1]), int(pool_args[2])) # k size, stride
+            for j in range(args.n_avg):
+                res.append(gather_epoch(net, dataloader))  
+
+            means = np.mean(res, axis=0).tolist()
 
             # store results
             print(f'{means[0]/1_000_000:.4f}J, {means[1]/1_000_000:.4f}s, {means[2]/1_000_000:.4f}J, {means[3]/1_000_000:.4f}s')

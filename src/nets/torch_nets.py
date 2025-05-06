@@ -88,7 +88,6 @@ def train_one_epoch(model, train_loader, optimizer):
 	return np.mean(forward_energy), np.mean(forward_time), np.mean(backward_energy), np.mean(backward_time)
 
 
-
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--n_passes', type=int, default=1, help='number of forward and backward passes to collect for each net')

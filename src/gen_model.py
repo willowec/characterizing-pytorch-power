@@ -127,8 +127,8 @@ if __name__ == "__main__":
         for column in y.columns:
             print(f'Generating model for {column}:')
 
-            # gen model
-            model = search_models_orders(X, y[column], [LinearRegression, Lasso, LassoCV], args.degree)
+            # gen model (make sure to pass the models uninitialized!)
+            model = search_models_orders(X, y[column], [LinearRegression, Lasso, LassoCV], args.degree) 
             
             # save model
             model_dir = Path(f"out/models/{args.data_file.parts[1].split('-')[0]}/{column}")

@@ -89,7 +89,6 @@ def predict_conv_layer(conv_model: tuple, batch_size: int, in_size: tuple, layer
 	'''
 	predict forward/backward energy consumption & time for one Conv2d layer 
 	'''
-	print(conv_model)
 	lin, degree, poly, scaler, test_err = conv_model
 
 	# in: batch size, in chan, out chan, im side length, k side length, stride
@@ -102,10 +101,7 @@ def predict_conv_layer(conv_model: tuple, batch_size: int, in_size: tuple, layer
 				   ]).reshape(1, -1)
 
 	X_scaled = scaler.transform(X)
-
 	X_poly = poly.transform(X_scaled)
-
-	print(X_poly.shape, lin.n_features_in_)
 	pred = lin.predict(X_poly)
 
 	return pred
@@ -115,16 +111,40 @@ def predict_linear_layer(linear_model: tuple, batch_size: int, layer: torch.nn.L
 	'''
 	predict forward/backward energy consumption & time for one linear layer 
 	'''
+	lin, degree, poly, scaler, test_err = linear_model
+
 	# in: batch_size, in_size, out_size
+	X = torch.Tensor([batch_size, 
+				   layer.in_features, 
+				   layer.out_features,
+				   ]).reshape(1, -1)
+		
+	X_scaled = scaler.transform(X)
+	X_poly = poly.transform(X_scaled)
+	pred = lin.predict(X_poly)
+
+	return pred
 
 
-def predict_pool_layer(pool_model: tuple, batch_size: int, in_ize: tuple, layer: torch.nn.MaxPool2d) -> tuple:
+def predict_pool_layer(pool_model: tuple, batch_size: int, in_size: tuple, layer: torch.nn.MaxPool2d) -> tuple:
 	'''
 	predict forward/backward energy consumption & time for one pool layer 
 	'''
+	lin, degree, poly, scaler, test_err = pool_model
 
 	# in: batch_size, k side length, stride, in_chan, im side length
+	X = torch.Tensor([batch_size, 
+				   layer.kernel_size[-1] if isinstance(layer.kernel_size, tuple) else layer.kernel_size, 
+					layer.stride[-1] if isinstance(layer.stride, tuple) else layer.stride,
+				   in_size[0],
+				   in_size[-1],
+				   ]).reshape(1, -1)
+		
+	X_scaled = scaler.transform(X)
+	X_poly = poly.transform(X_scaled)
+	pred = lin.predict(X_poly)
 
+	return pred
 
 
 
@@ -141,6 +161,8 @@ def predict_cnn(energy_model: tuple, batch_size: int, input_size: tuple, cnn_mod
 	in_sizes = get_layer_data_size(layers, input_size)
 
 	for layer, in_size in zip(layers, in_sizes):
+		print(f'predicting {layer} with input size {in_size}')
+
 		if isinstance(layer, torch.nn.Conv2d):
 			predicted_vals.append(predict_conv_layer(conv, batch_size, in_size, layer))
 		if isinstance(layer, torch.nn.Linear):

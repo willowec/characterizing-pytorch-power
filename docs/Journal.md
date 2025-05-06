@@ -239,3 +239,9 @@ okay yayyy fixed the layer count thing! had some issues with my model generation
 Now i did forget to create models for all of the other features soooooooooooooooooooooooooooooo
 
 okay genning all models now :)))))
+
+Damn!
+I messed up the max pool feature saving.
+Do I need to rerun?
+NO!
+I can just manually add in the missing headers :))
