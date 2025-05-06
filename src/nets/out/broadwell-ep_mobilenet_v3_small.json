@@ -1,0 +1,1 @@
+{"net": "mobilenet_v3_small", "batch_size": 512, "im_side_len": 64, "forward_energy": [7183087.091836735], "forward_time": [187384.15551020406], "backward_energy": [36422493.3367347], "backward_time": [825066.6623877551]}

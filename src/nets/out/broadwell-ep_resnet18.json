@@ -1,0 +1,1 @@
+{"net": "resnet18", "batch_size": 512, "im_side_len": 64, "forward_energy": [-1312611965.3418367], "forward_time": [545041.1847346938], "backward_energy": [82716962.53061225], "backward_time": [1725752.8734591834]}

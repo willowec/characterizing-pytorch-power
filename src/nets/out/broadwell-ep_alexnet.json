@@ -1,0 +1,1 @@
+{"net": "alexnet", "batch_size": 512, "im_side_len": 64, "forward_energy": [16157925.096938776], "forward_time": [467066.24727551034], "backward_energy": [22954579.326530613], "backward_time": [500470.5905918367]}
