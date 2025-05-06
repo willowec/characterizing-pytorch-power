@@ -250,3 +250,28 @@ I can just manually add in the missing headers :))
 
 okay, silly news is that predicting on alexnet we get a ton of negatives... this may be a case of too many degrees?
 uh oh! trying to limit to three degrees or less sees total negaives still..
+
+Actual alexnet values (raptorlake):
+ - forward energy: 18582490.167346936
+ - forward time: 253769.28374591842
+ - backward energy: 24469127.496938772
+ - backward time: 376349.23268775514
+
+In NeuralPower, they use
+ - degree 2 for Linear
+ - degree 3 for Conv
+ - degree 3 for Pool
+
+For my models using LassoCV and the above degrees, on alexnet raptorlake we predict:
+ - forward energy: -262289.07702839194
+ - forward time: -3596.037609339482
+ - backward energy: -243777.47803026342
+ - backward time: -2664.0116891760713
+
+YIKES
+
+---------------------------------------
+
+Okay, cut your losses.
+You *actually* have a $91$ in this class even if you don't turn in your work. So...?
+Maybe just do the demo

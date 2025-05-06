@@ -14,7 +14,7 @@ import warnings
 from sklearn.model_selection import train_test_split 
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 from sklearn.linear_model import LinearRegression, LassoCV, Lasso
-from sklearn.metrics import root_mean_squared_error
+from sklearn.metrics import root_mean_squared_error, mean_absolute_percentage_error
 from sklearn.exceptions import ConvergenceWarning
 
 # cause enbies really just do want to have fun so desparately
@@ -22,12 +22,14 @@ COLOR_GREEN = "\x1b[92m"
 COLOR_RED = "\x1b[91m"
 COLOR_RESET = "\x1b[0m"
 
+RANDOM_STATE = 10
+
 def train_model(X, y, lin, degree):
     '''
     Trains a polynomial regression of order degree on linear model lin
     '''
     lin = lin()
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=RANDOM_STATE)
 
     scaler = StandardScaler()
     X_train_scaler = scaler.fit_transform(X_train)
@@ -41,10 +43,12 @@ def train_model(X, y, lin, degree):
     y_pred_test = lin.predict(X_test_poly)
     y_pred_train = lin.predict(X_train_poly)
 
-    test_err = root_mean_squared_error(y_test, y_pred_test)
-    train_err = root_mean_squared_error(y_train, y_pred_train)
+    test_rmse = root_mean_squared_error(y_test, y_pred_test)
+    train_rmse = root_mean_squared_error(y_train, y_pred_train)
+    test_mape = mean_absolute_percentage_error(y_test, y_pred_test)
+    train_mape = mean_absolute_percentage_error(y_train, y_pred_train)
 
-    return lin, poly, scaler, test_err, train_err
+    return lin, poly, scaler, test_rmse, train_rmse, test_mape, train_mape
 
 
 def search_models_orders(X, y, lins: list, degrees: int, n_avg: int=10) -> tuple:
@@ -63,9 +67,9 @@ def search_models_orders(X, y, lins: list, degrees: int, n_avg: int=10) -> tuple
                 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
                 for i in range(n_avg):
-                    lin, poly, scaler, test_err, train_err = train_model(X.values, y.values, model, degree)
-                    test_errs.append(test_err)
-                    train_errs.append(train_err)
+                    lin, poly, scaler, test_rmse, train_rmse, test_mape, train_mape = train_model(X.values, y.values, model, degree)
+                    test_errs.append(test_rmse)
+                    train_errs.append(train_rmse)
 
                 test_err = np.mean(test_errs)
                 train_err = np.mean(train_errs)
@@ -74,9 +78,9 @@ def search_models_orders(X, y, lins: list, degrees: int, n_avg: int=10) -> tuple
                     # this test err was better than the previous best
                     best = (lin, degree, poly, scaler, test_err)
 
-                print(f'Model {lin} with degree {degree}:\t{test_err=:.3f}\t{train_err=:.3f}')
+                print(f'Model {lin} with degree {degree}:\t{test_rmse=:.3f}\t{train_rmse=:.3f}\t{test_mape=:.2}%\t{train_mape=:.2}%')
 
-    print(f'Best model: {best[0]} (input features {best[0].n_features_in_}) with degree {best[1]}:\t{COLOR_GREEN}test_err={best[-1]:.3e}{COLOR_RESET}')
+    print(f'Best model: {best[0]} (input features {best[0].n_features_in_}) with degree {best[1]}:\t{COLOR_GREEN}test_rmse={best[-1]:.3e}{COLOR_RESET}')
     return best
 
 
@@ -91,12 +95,11 @@ def save_model(model: tuple, path: Path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('data_file', type=Path, help='path to the layer data')
-    parser.add_argument('--search', action='store_true', default=True, help='search for the best order for this problem')
+    parser.add_argument('--search', action='store_true', default=False, help='search for the best order for this problem')
     parser.add_argument('-d', '--degree', type=int, default=1, help='polynomial degree to use')
     parser.add_argument('-N', '--N_sets', type=int, default=1, help='the number of times to randomize the train/test data and re-train')
     parser.add_argument('--start', type=int, default=0)
     parser.add_argument('--end', type=int, default=-1)
-
 
     args = parser.parse_args()
 
@@ -138,7 +141,15 @@ if __name__ == "__main__":
         quit()
 
     for i in range(args.N_sets):
-        # non-search use case frankly defunct
-        lin, poly, scaler, test_err, train_err = train_model(X, y, Lasso(), args.degree)
+        for column in y.columns:
+            print(f'Generating model for {column}:')
 
-        print(f"{i}: {test_err=}\t{train_err=}")
+            lin, poly, scaler, test_rmse, train_rmse, test_mape, train_mape = train_model(X.values, y[column].values, LassoCV, args.degree)
+            model = (lin, args.degree, poly, scaler, test_rmse)
+
+            print(f"{i}: {test_rmse=}\t{train_rmse=}\t{test_mape=:.2}%\t{train_mape=:.2}%")
+
+            # save model
+            model_dir = Path(f"out/models/{args.data_file.parts[1].split('-')[0]}/{column}")
+            model_dir.mkdir(exist_ok=True, parents=True)
+            save_model(model, model_dir.joinpath(args.data_file.stem + '.pickle'))

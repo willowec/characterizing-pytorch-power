@@ -100,6 +100,8 @@ def predict_conv_layer(conv_model: tuple, batch_size: int, in_size: tuple, layer
 				   layer.stride[-1]
 				   ]).reshape(1, -1)
 
+	print(X)
+
 	X_scaled = scaler.transform(X)
 	X_poly = poly.transform(X_scaled)
 	pred = lin.predict(X_poly)
