@@ -10,13 +10,14 @@ from torch.utils.data import TensorDataset, DataLoader
 
 import argparse
 import pickle
+import json
 
 from pathlib import Path
 
 from sklearn.model_selection import train_test_split 
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 from sklearn.linear_model import LinearRegression, LassoCV, Lasso
-from sklearn.metrics import root_mean_squared_error
+from sklearn.metrics import root_mean_squared_error, mean_absolute_percentage_error
 
 import numpy as np
 
@@ -185,6 +186,7 @@ if __name__ == '__main__':
 	parser.add_argument('--hub', type=str, default='pytorch/vision:release/0.10', help='name of the pytorch hub to download the model from')
 	parser.add_argument('--batch_size', type=int, default=512, help='the batch size of the model we are predicting')
 	parser.add_argument('--input_size', type=tuple, default=(3, 64, 64), help='the size of the input image we are predicting')
+	parser.add_argument('--ground_truth', type=Path, help='the ground truth values to compare the prediction to. If set, overrides batch_size and input_size')
 
 	args = parser.parse_args()
 
@@ -194,9 +196,34 @@ if __name__ == '__main__':
 	# load CNN to estimate
 	model = torch.hub.load(args.hub, args.model_name)
 
-	vals, layers = predict_cnn(energy_model, args.batch_size, args.input_size, model)
-	
-	for val, layer in zip(vals, layers):
-		print(f'{layer}:\t{val}')
+	batch_size = args.batch_size
+	input_size = args.input_size
 
-	print(f'Total result: {np.sum(vals)}')
+	if args.ground_truth:
+		# load up the bs and is from gt
+		gt = json.loads(args.ground_truth.read_text())
+		batch_size = int(gt['batch_size'])
+		input_size = (3, int(gt['im_side_len']), int(gt['im_side_len']))
+
+	vals, layers = predict_cnn(energy_model, batch_size, input_size, model)
+	
+	total_result = np.sum(vals)
+
+	print(f'Total result: {total_result}')
+
+	if args.ground_truth:
+		# compare to ground truth
+		gt = json.loads(args.ground_truth.read_text())
+
+		# this is so scuffed
+		# so scuffed
+		# wow.
+		for k in gt.keys():
+			direction, val = args.models_dir.parts[-1].split('_')
+			if direction in k and val in k:
+				# we found the thing to compare to
+				actual = np.mean(gt[k]) / 1e6 # convert from uj to J or us to s
+				
+				print(f'Predicted: {total_result}. Actual: {actual}.')
+				print(f'RMSE: {root_mean_squared_error([total_result], [actual])}')
+				print(f'(units seconds or Joules)')
